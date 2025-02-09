@@ -105,19 +105,19 @@ class Det3DDataset(BaseDataset):
             # we allow to train on subset of self.METAINFO['classes']
             # map unselected labels to -1
             self.label_mapping = {
-                i: -1
-                for i in range(len(self.METAINFO['classes']))
+                name: i
+                for i, name in enumerate(metainfo['classes'])
             }
             self.label_mapping[-1] = -1
             for label_idx, name in enumerate(metainfo['classes']):
-                ori_label = self.METAINFO['classes'].index(name)
+                ori_label = metainfo['classes'].index(name)
                 self.label_mapping[ori_label] = label_idx
 
             self.num_ins_per_cat = [0] * len(metainfo['classes'])
         else:
             self.label_mapping = {
-                i: i
-                for i in range(len(self.METAINFO['classes']))
+                name: i
+                for i, name in enumerate(self.METAINFO['classes'])
             }
             self.label_mapping[-1] = -1
 
@@ -129,8 +129,7 @@ class Det3DDataset(BaseDataset):
             data_root=data_root,
             data_prefix=data_prefix,
             pipeline=pipeline,
-            test_mode=test_mode,
-            **kwargs)
+            test_mode=test_mode)
 
         # can be accessed by other component in runner
         self.metainfo['box_type_3d'] = box_type_3d
@@ -276,13 +275,16 @@ class Det3DDataset(BaseDataset):
         """
 
         if self.modality['use_lidar']:
+            info['lidar_points'] = {}
             info['lidar_points']['lidar_path'] = \
                 osp.join(
                     self.data_prefix.get('pts', ''),
-                    info['lidar_points']['lidar_path'])
+                    info['point_cloud']['lidar_idx'] + '.npy')
+                    #info["lidar_path"])
 
-            info['num_pts_feats'] = info['lidar_points']['num_pts_feats']
-            info['lidar_path'] = info['lidar_points']['lidar_path']
+            info['num_pts_feats'] = info['point_cloud']['num_features']
+            #info['num_pts_feats'] = info['num_features']
+            info['lidar_path'] = info['point_cloud']['lidar_idx']
             if 'lidar_sweeps' in info:
                 for sweep in info['lidar_sweeps']:
                     file_suffix = sweep['lidar_points']['lidar_path'].split(
