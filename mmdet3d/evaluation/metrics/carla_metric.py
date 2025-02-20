@@ -141,7 +141,7 @@ class CarlaMetric(BaseMetric):
 
         return gt_annos
     
-    def transform_annotations_to_kitti_format(self, net_outputs):
+    def transform_annotations_to_kitti_format(self, net_outputs, pklfile_prefix = "/media/hasiegf/data/mmdet3d/out/vis/test.pkl"):
         """
         Args:
             annos:
@@ -193,6 +193,13 @@ class CarlaMetric(BaseMetric):
                 [sample_idx] * len(anno['score']), dtype=np.int64)
 
             det_annos.append(anno)
+
+        if pklfile_prefix is not None:
+            if not pklfile_prefix.endswith(('.pkl', '.pickle')):
+                out = f'{pklfile_prefix}.pkl'
+            else:
+                out = pklfile_prefix
+            mmengine.dump(det_annos, out)
 
         return {'pred_instances_3d': det_annos}
         

@@ -5,14 +5,23 @@ import numpy as np
 
 from mmdet3d.registry import DATASETS
 from mmdet3d.structures import LiDARInstance3DBoxes
-from .det3d_dataset import Det3DDataset
+from ..det3d_dataset import Det3DDataset
 
 
 @DATASETS.register_module()
 class CarlaDataset(Det3DDataset):
     """CARLA Dataset."""
     METAINFO = {
-        'classes': ('Pedestrian', 'Cyclist', 'Car')
+        'classes': ('Car'),
+        'palette': [
+            (255, 0, 0),  # red
+            (0, 255, 0),  # green
+            (0, 0, 255),  # Blue
+        ]
+    }
+    class_mapping = {
+        'Pedestrian': -1,
+        'Car': 0,
     }
         
     def parse(self, info: dict) -> Union[dict, None]:
@@ -30,7 +39,7 @@ class CarlaDataset(Det3DDataset):
         # Initialize the ann_info dictionary
         ann_info = dict()
 
-        ann_info['gt_labels_3d'] = np.array([self.label_mapping.get(name, -1) for name in names], dtype=np.int64)
+        ann_info['gt_labels_3d'] = np.array([self.class_mapping.get(name, -1) for name in names], dtype=np.int64)
         ann_info['gt_bboxes_3d'] = gt_boxes_lidar
 
         # Count instances per category

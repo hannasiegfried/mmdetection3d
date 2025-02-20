@@ -56,12 +56,12 @@ class Det3DVisualizationHook(Hook):
     def __init__(self,
                  draw: bool = False,
                  interval: int = 50,
-                 score_thr: float = 0.3,
+                 score_thr: float = 0.5,
                  show: bool = False,
                  vis_task: str = 'mono_det',
                  wait_time: float = 0.,
                  test_out_dir: Optional[str] = None,
-                 draw_gt: bool = False,
+                 draw_gt: bool = True,
                  draw_pred: bool = True,
                  show_pcd_rgb: bool = False,
                  backend_args: Optional[dict] = None):
@@ -216,8 +216,9 @@ class Det3DVisualizationHook(Hook):
                     'lidar_path is not in data_sample'
                 lidar_path = data_sample.lidar_path
                 num_pts_feats = data_sample.num_pts_feats
-                pts_bytes = get(lidar_path, backend_args=self.backend_args)
-                points = np.frombuffer(pts_bytes, dtype=np.float32)
+                #pts_bytes = get(lidar_path, backend_args=self.backend_args)
+                #points = np.frombuffer(pts_bytes, dtype=np.float32)
+                points = np.load("/media/hasiegf/data/carla_pcdet/points/" + lidar_path + ".npy")
                 points = points.reshape(-1, num_pts_feats)
                 data_input['points'] = points
                 if self.test_out_dir is not None:

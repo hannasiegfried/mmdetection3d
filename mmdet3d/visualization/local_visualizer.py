@@ -630,9 +630,13 @@ class Det3DLocalVisualizer(DetLocalVisualizer):
         # Only visualize when there is at least one instance
         if not len(instances) > 0:
             return None
-
-        bboxes_3d = instances.bboxes_3d  # BaseInstance3DBoxes
-        labels_3d = instances.labels_3d
+        
+        if "gt_bboxes_3d" in instances:
+            bboxes_3d = instances["gt_bboxes_3d"]
+            labels_3d = instances["gt_labels_3d"]
+        else:
+            bboxes_3d = instances.bboxes_3d  # BaseInstance3DBoxes
+            labels_3d = instances.labels_3d
 
         data_3d = dict()
 
@@ -1000,7 +1004,7 @@ class Det3DLocalVisualizer(DetLocalVisualizer):
         if draw_gt and data_sample is not None:
             if 'gt_instances_3d' in data_sample:
                 gt_data_3d = self._draw_instances_3d(
-                    data_input, data_sample.gt_instances_3d,
+                    data_input, data_sample.eval_ann_info,
                     data_sample.metainfo, vis_task, show_pcd_rgb, palette)
             if 'gt_instances' in data_sample:
                 if len(data_sample.gt_instances) > 0:

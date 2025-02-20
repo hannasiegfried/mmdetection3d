@@ -6,10 +6,11 @@ _base_ = [
 # dataset settings
 # dataset_type = 'CarlaDataset'
 # data_root = '/media/hasiegf/data/carla_pcdet/'
-# class_names = ['Car', 'Pedestrian', 'Cyclist']
-# point_cloud_range = [-1, -52, -2, 90, 52, 6]
+# class_names = ['Car']
+# point_cloud_range = [2, -52, -2, 90, 52, 6]
 # input_modality = dict(use_lidar=True, use_camera=False)
 # backend_args = None
+# metainfo = dict(classes=class_names)
 
 # db_sampler = dict(
 #     data_root=data_root,
@@ -36,21 +37,21 @@ _base_ = [
 #     dict(type='LoadAnnotations3D', with_bbox_3d=True, with_label_3d=True),
 #     dict(type='PointsRangeFilter', point_cloud_range=point_cloud_range),
 #     dict(type='ObjectRangeFilter', point_cloud_range=point_cloud_range),
-#     #dict(type='ObjectSample', db_sampler=db_sampler),
-#     dict(type='RandomFlip3D', flip_ratio_bev_horizontal=0.5),
-#     dict(
-#         type='ObjectNoise',
-#         num_try=100,
-#         translation_std=[1.0, 1.0, 0],
-#         global_rot_range=[0.0, 0.0],
-#         rot_range=[-1.0471975511965976, 1.0471975511965976]),
-#     dict(
-#         type='GlobalRotScaleTrans',
-#         rot_range=[-0.78539816, 0.78539816],
-#         scale_ratio_range=[0.9, 1.1]),
-#     # 3DSSD can get a higher performance without this transform
-#     # dict(type='BackgroundPointsFilter', bbox_enlarge_range=(0.5, 2.0, 0.5)),
-#     #dict(type='PointSample', num_points=16384),
+    #dict(type='ObjectSample', db_sampler=db_sampler),
+    # dict(type='RandomFlip3D', flip_ratio_bev_horizontal=0.5),
+    # dict(
+    #     type='ObjectNoise',
+    #     num_try=100,
+    #     translation_std=[1.0, 1.0, 0],
+    #     global_rot_range=[0.0, 0.0],
+    #     rot_range=[-1.0471975511965976, 1.0471975511965976]),
+    # dict(
+    #     type='GlobalRotScaleTrans',
+    #     rot_range=[-0.78539816, 0.78539816],
+    #     scale_ratio_range=[0.9, 1.1]),
+    # 3DSSD can get a higher performance without this transform
+    # dict(type='BackgroundPointsFilter', bbox_enlarge_range=(0.5, 2.0, 0.5)),
+#     dict(type='PointSample', num_points=16384),
 #     dict(
 #         type='Pack3DDetInputs',
 #         keys=['points', 'gt_bboxes_3d', 'gt_labels_3d'])
@@ -63,34 +64,18 @@ _base_ = [
 #         load_dim=4,
 #         use_dim=4,
 #         backend_args=backend_args),
-#     dict(
-#         type='MultiScaleFlipAug3D',
-#         img_scale=(1333, 800),
-#         pts_scale_ratio=1,
-#         flip=False,
-#         transforms=[
-#             dict(
-#                 type='GlobalRotScaleTrans',
-#                 rot_range=[0, 0],
-#                 scale_ratio_range=[1., 1.],
-#                 translation_std=[0, 0, 0]),
-#             dict(type='RandomFlip3D'),
-#             dict(
-#                 type='PointsRangeFilter', point_cloud_range=point_cloud_range),
-#             #dict(type='PointSample', num_points=16384),
-#         ]),
 #     dict(type='Pack3DDetInputs', keys=['points'])
 # ]
 
 # train_dataloader = dict(
-#     batch_size=1, dataset=dict(dataset=dict(pipeline=train_pipeline, )))
+#    batch_size=1, dataset=dict(dataset=dict(pipeline=train_pipeline, )))
 # test_dataloader = dict(dataset=dict(pipeline=test_pipeline))
 # val_dataloader = dict(dataset=dict(pipeline=test_pipeline))
 
 # model settings
 model = dict(
     bbox_head=dict(
-        num_classes=3,
+        num_classes=1,
         bbox_coder=dict(
             type='AnchorFreeBBoxCoder', num_dir_bins=12, with_rot=True)))
 
@@ -103,7 +88,7 @@ optim_wrapper = dict(
 )
 
 # training schedule for 1x
-train_cfg = dict(type='EpochBasedTrainLoop', max_epochs=80, val_interval=2)
+train_cfg = dict(type='EpochBasedTrainLoop', max_epochs=80, val_interval=5)
 val_cfg = dict(type='ValLoop')
 test_cfg = dict(type='TestLoop')
 

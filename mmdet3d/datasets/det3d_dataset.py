@@ -105,23 +105,45 @@ class Det3DDataset(BaseDataset):
             # we allow to train on subset of self.METAINFO['classes']
             # map unselected labels to -1
             self.label_mapping = {
-                name: i
-                for i, name in enumerate(metainfo['classes'])
+                i: -1
+                for i in range(len(self.METAINFO['classes']))
             }
             self.label_mapping[-1] = -1
             for label_idx, name in enumerate(metainfo['classes']):
-                ori_label = metainfo['classes'].index(name)
+                ori_label = self.METAINFO['classes'].index(name)
                 self.label_mapping[ori_label] = label_idx
 
             self.num_ins_per_cat = [0] * len(metainfo['classes'])
         else:
             self.label_mapping = {
-                name: i
-                for i, name in enumerate(self.METAINFO['classes'])
+                i: i
+                for i in range(len(self.METAINFO['classes']))
             }
             self.label_mapping[-1] = -1
 
             self.num_ins_per_cat = [0] * len(self.METAINFO['classes'])
+
+        # if metainfo is not None and 'classes' in metainfo:
+        #     # we allow to train on subset of self.METAINFO['classes']
+        #     # map unselected labels to -1
+        #     self.label_mapping = {
+        #         name: i
+        #         for i, name in enumerate(metainfo['classes'])
+        #     }
+        #     self.label_mapping[-1] = -1
+        #     for label_idx, name in enumerate(metainfo['classes']):
+        #         ori_label = metainfo['classes'].index(name)
+        #         self.label_mapping[ori_label] = label_idx
+
+        #     self.num_ins_per_cat = [0] * len(metainfo['classes'])
+        # else:
+        #     self.label_mapping = {
+        #         name: i
+        #         for i, name in enumerate(self.METAINFO['classes'])
+        #     }
+        #     self.label_mapping[-1] = -1
+
+        #     self.num_ins_per_cat = [0] * len(self.METAINFO['classes'])
 
         super().__init__(
             ann_file=ann_file,
