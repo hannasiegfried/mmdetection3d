@@ -2,6 +2,8 @@
 from typing import Callable, List, Union
 
 import numpy as np
+from pathlib import Path
+import os
 
 from mmdet3d.registry import DATASETS
 from mmdet3d.structures import LiDARInstance3DBoxes
@@ -77,4 +79,31 @@ class CarlaDataset(Det3DDataset):
         ann_info = self._remove_dontcare(ann_info)
         gt_bboxes_3d = LiDARInstance3DBoxes(ann_info['gt_bboxes_3d'])
         ann_info['gt_bboxes_3d'] = gt_bboxes_3d
+        #ann_info['gt_waveform_model'] = self.load_targets_waveform_model(info["lidar_path"])
+        ann_info['gt_waveform_model'] = {}
         return ann_info
+
+    def load_npy_or_npz(self, path: str, frame: str) -> np.array:
+        full_path = f"{path}/{frame}"
+        if os.path.exists(f"{full_path}.npy"):
+            x = np.load(f"{full_path}.npy")
+        elif os.path.exists(f"{full_path}.npz"):
+            x = np.load(f"{full_path}.npz")["arr_0"]
+        else:
+            print(f"{full_path=}")
+            raise NotImplementedError
+        return x
+
+    def load_targets_waveform_model(self, frame: str) -> dict:
+        gt_tof = self.load_npy_or_npz(f"{self.data_root}/gt_tof", frame)
+        centroid_tof = self.load_npy_or_npz(f"{self.data_root}/centroid_tof", frame)
+        patch_class = self.load_npy_or_npz(f"{self.data_root}/target_proposal_64_classification", frame)
+        patch_offset = self.load_npy_or_npz(f"{self.data_root}/target_proposal_64_offset", frame)
+
+        target = {
+            "centroid_tof": centroid_tof,
+            "gt_tof": gt_tof,
+            "patch_class": patch_class,
+            "patch_offset": patch_offset,
+        }
+        return target

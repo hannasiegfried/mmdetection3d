@@ -2,6 +2,8 @@ import numpy as np
 import os
 import open3d as o3d
 import matplotlib.pyplot as plt
+import torch
+
 
 SPEED_OF_LIGHT = 299792458  # m/s
 TIME_BIN_NS = 0.266
@@ -53,4 +55,32 @@ def plot_points_pc(pc: np.array) -> None:
     pcd = o3d.geometry.PointCloud()
     pcd.points = o3d.utility.Vector3dVector(pc)
     o3d.visualization.draw_geometries([pcd])
+
+def process_pc_torch(dist: torch.Tensor) -> torch.Tensor:
+    """Converts the Carla point clouds to a format that PCDet accepts. For this, the
+    distances are multiplied by the sensor specs."""
+    view_dir = torch.from_numpy(np.load("/lhome/hasiegf/thesis/sensor_specs/view_direction_carla_60deg.npy")).to(dist.device)
+    
+    filtered_dist = filter_points_torch(dist)
+
+    pc = filtered_dist.unsqueeze(-1) * view_dir.unsqueeze(2)
+    pc = pc.view(-1, 3)
+    
+    # Select only rows that do not contain NaN values
+    pc = pc[~torch.isnan(pc).any(dim=1)]
+    # Convert distances
+    pc = pc * TOF_TO_M
+
+    # Convert to kitti lidar coordinates
+    pc = pc[:, [2, 0, 1]]
+    pc[:, [1, 2]] = -pc[:, [1, 2]]
+   
+    # Add intensity = 0
+    pc_points = torch.cat((pc, torch.zeros((pc.size(0), 1), device=pc.device)), dim=1)
+    return pc_points
+
+def filter_points_torch(points: torch.Tensor) -> torch.Tensor:
+    mask = points == 0
+    points[mask] = float('nan')
+    return points
     

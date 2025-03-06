@@ -7,6 +7,7 @@ import mmcv
 import mmengine
 import numpy as np
 import torch
+import os
 from mmcv.transforms import LoadImageFromFile
 from mmcv.transforms.base import BaseTransform
 from mmdet.datasets.transforms import LoadAnnotations
@@ -589,7 +590,7 @@ class LoadPointsFromWaveformBaseline(BaseTransform):
 
     def __init__(self, data_path: str) -> None:
         self.coord_type = 'LIDAR'
-        self.waveform_path = Path(data_path)
+        self.waveform_path = Path(data_path) / "waveform_8bit"
         self.waveform_model = peakfinding_baseline.PeakFinding()
 
     def transform(self, results: dict) -> dict:
@@ -609,12 +610,8 @@ class LoadPointsFromWaveformBaseline(BaseTransform):
         assert waveform_file.exists()
         waveform = np.load(waveform_file).astype(np.float32)
         waveform /= 255.0
-        #waveform = np.expand_dims(waveform, axis=0)
         waveform = torch.as_tensor(waveform)
-        #waveform = waveform.unsqueeze(-1)
         output = self.waveform_model.forward(waveform)
-        #output = self.transform_output(output)
-        #return pc_converter.process_pc(output)
         points = pc_converter.process_pc(output["tof"])
     
         points_class = get_points_type(self.coord_type)
@@ -661,7 +658,7 @@ class LoadPointsFromWaveformModel(BaseTransform):
 
     def __init__(self, data_path: str) -> None:
         self.coord_type = 'LIDAR'
-        self.waveform_path = Path(data_path)
+        self.waveform_path = Path(data_path) / "waveform_8bit"
         self.waveform_model = peakfinding_model.load_model("/lhome/hasiegf/thesis/fw_lidar")
 
     def transform_output(self, output):
@@ -688,7 +685,7 @@ class LoadPointsFromWaveformModel(BaseTransform):
         """
         pts_file_path = results['point_cloud']['lidar_idx']
         waveform_file = self.waveform_path / ('%s.npy' % pts_file_path)
-        assert waveform_file.exists()
+        #assert waveform_file.exists()
         waveform = np.load(waveform_file).astype(np.float32)
         waveform /= 255.0
         waveform = np.expand_dims(waveform, axis=0)
@@ -704,6 +701,69 @@ class LoadPointsFromWaveformModel(BaseTransform):
         results['points'] = points
 
         return results
+    
+@TRANSFORMS.register_module()
+class LoadPointsForWaveformModelIntegration(BaseTransform):
+    """Load Points From Waveform model.
+
+    Required Keys:
+
+    - lidar_points (dict)
+
+        - lidar_path (str)
+
+    Added Keys:
+
+    - points (np.float32)
+
+    Args:
+        coord_type (str): The type of coordinates of points cloud.
+            Available options includes:
+
+            - 'LIDAR': Points in LiDAR coordinates.
+            - 'DEPTH': Points in depth coordinates, usually for indoor dataset.
+            - 'CAMERA': Points in camera coordinates.
+        load_dim (int): The dimension of the loaded points. Defaults to 6.
+        use_dim (list[int] | int): Which dimensions of the points to use.
+            Defaults to [0, 1, 2]. For KITTI dataset, set use_dim=4
+            or use_dim=[0, 1, 2, 3] to use the intensity dimension.
+        shift_height (bool): Whether to use shifted height. Defaults to False.
+        use_color (bool): Whether to use color features. Defaults to False.
+        norm_intensity (bool): Whether to normlize the intensity. Defaults to
+            False.
+        norm_elongation (bool): Whether to normlize the elongation. This is
+            usually used in Waymo dataset.Defaults to False.
+        backend_args (dict, optional): Arguments to instantiate the
+            corresponding backend. Defaults to None.
+    """
+
+    def __init__(self, data_path: str) -> None:
+        self.coord_type = 'LIDAR'
+        data_path = Path(data_path)
+        self.waveform_path = data_path / "waveform_8bit"
+
+    def transform(self, results: dict) -> dict:
+        """Method to load points data from file.
+
+        Args:
+            results (dict): Result dict containing point clouds data.
+
+        Returns:
+            dict: The result dict containing the point clouds data.
+            Added key and value are described below.
+
+                - points (:obj:`BasePoints`): Point clouds data.
+        """
+        frame = results['point_cloud']['lidar_idx']
+        waveform_file = self.waveform_path / ('%s.npy' % frame)
+        assert waveform_file.exists()
+        waveform = np.load(waveform_file).astype(np.float32)
+        waveform /= 255.0
+        waveform = np.expand_dims(waveform, axis=0)
+        waveform = torch.as_tensor(waveform).unsqueeze(-1)
+        results['points'] = waveform
+        return results
+
 
 @TRANSFORMS.register_module()
 class LoadPointsFromFile(BaseTransform):

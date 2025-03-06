@@ -1,6 +1,8 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from typing import List, Union
 
+import torch
+
 from mmdet.models import BaseDetector
 from mmengine.structures import InstanceData
 
@@ -9,7 +11,8 @@ from mmdet3d.structures.det3d_data_sample import (ForwardResults,
                                                   OptSampleList, SampleList)
 from mmdet3d.utils.typing_utils import (OptConfigType, OptInstanceList,
                                         OptMultiConfig)
-
+from mmdet3d.datasets.carla import peakfinding_baseline, pc_converter, peakfinding_model
+from fw_lidar.dsp.single_stage.single_stage_model import criterion_class_offset
 
 @MODELS.register_module()
 class Base3DDetector(BaseDetector):
@@ -28,6 +31,8 @@ class Base3DDetector(BaseDetector):
                  init_cfg: OptMultiConfig = None) -> None:
         super().__init__(
             data_preprocessor=data_preprocessor, init_cfg=init_cfg)
+        #self.waveform_model = None
+        self.waveform_model = peakfinding_model.load_model("/lhome/hasiegf/thesis/fw_lidar")
 
     def forward(self,
                 inputs: Union[dict, List[dict]],
@@ -72,8 +77,23 @@ class Base3DDetector(BaseDetector):
             - If ``mode="loss"``, return a dict of tensor.
         """
         if mode == 'loss':
-            return self.loss(inputs, data_samples, **kwargs)
+            if self.waveform_model:
+                self.waveform_model.train()
+                points = self.forward_waveform_model(inputs)
+                target = data_samples[0].gt_waveform_data
+                target = {key: val.unsqueeze(0).cuda() for key, val in target.items()}
+                points_losses = self.waveform_model.get_loss(points, target)
+                inputs["points"][0] = self.transform_points(points)
+                det_losses = self.loss(inputs, data_samples, **kwargs)
+                det_losses["loss_waveform"] = points_losses["loss"] * 10
+            else:
+                det_losses = self.loss(inputs, data_samples, **kwargs)
+            return det_losses
         elif mode == 'predict':
+            if self.waveform_model:
+                self.waveform_model.eval()
+                points = self.forward_waveform_model(inputs)
+                inputs["points"][0] = self.transform_points(points)
             if isinstance(data_samples[0], list):
                 # aug test
                 assert len(data_samples[0]) == 1, 'Only support ' \
@@ -89,6 +109,22 @@ class Base3DDetector(BaseDetector):
         else:
             raise RuntimeError(f'Invalid mode "{mode}". '
                                'Only supports loss, predict and tensor mode')
+        
+    def forward_waveform_model(self, inputs):
+        points = inputs["points"][0].squeeze(1)
+        output = self.waveform_model.forward(points)
+        return output
+    
+    def transform_points(self, output):
+        pred_tof = output["tof"]
+        pred_score = output["patch_class"][..., 0]
+        threshold = max(torch.quantile(pred_score, 0.95).item(), 0.5)
+        pred_tof[pred_score < threshold] = 0  
+        sort_idx = torch.argsort(-pred_score, dim=-1)
+        pred_tof_sorted = torch.take_along_dim(pred_tof, sort_idx[..., None], dim=-2)
+        output = pred_tof_sorted.squeeze(-1).squeeze(0)
+        points = pc_converter.process_pc_torch(output)
+        return points.to(torch.float32)
 
     def add_pred_to_datasample(
         self,

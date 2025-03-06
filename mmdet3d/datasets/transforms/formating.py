@@ -61,6 +61,8 @@ class Pack3DDetInputs(BaseTransform):
         'gt_semantic_seg'
     ]
 
+    WAVEFORM_KEYS = ['gt_waveform_model']
+
     def __init__(
         self,
         keys: tuple,
@@ -173,11 +175,13 @@ class Pack3DDetInputs(BaseTransform):
         for key in [
                 'proposals', 'gt_bboxes', 'gt_bboxes_ignore', 'gt_labels',
                 'gt_bboxes_labels', 'attr_labels', 'pts_instance_mask',
-                'pts_semantic_mask', 'centers_2d', 'depths', 'gt_labels_3d'
-        ]:
-            if key not in results:
+                'pts_semantic_mask', 'centers_2d', 'depths', 'gt_labels_3d', 'gt_waveform_model'
+        ]:  
+            if key == 'gt_waveform_model' and "ann_info" in results:
+                results[key] = {dict_key: to_tensor(val) for dict_key, val in results["ann_info"][key].items()}
+            elif key not in results:
                 continue
-            if isinstance(results[key], list):
+            elif isinstance(results[key], list):
                 results[key] = [to_tensor(res) for res in results[key]]
             else:
                 results[key] = to_tensor(results[key])
@@ -190,11 +194,13 @@ class Pack3DDetInputs(BaseTransform):
                 results['gt_semantic_seg'][None])
         if 'gt_seg_map' in results:
             results['gt_seg_map'] = results['gt_seg_map'][None, ...]
+        
 
         data_sample = Det3DDataSample()
         gt_instances_3d = InstanceData()
         gt_instances = InstanceData()
         gt_pts_seg = PointData()
+        gt_waveform_data = {}
 
         data_metas = {}
         for key in self.meta_keys:
@@ -234,6 +240,8 @@ class Pack3DDetInputs(BaseTransform):
                         gt_instances[self._remove_prefix(key)] = results[key]
                 elif key in self.SEG_KEYS:
                     gt_pts_seg[self._remove_prefix(key)] = results[key]
+                elif key in self.WAVEFORM_KEYS:
+                    gt_waveform_data = results[key]
                 else:
                     raise NotImplementedError(f'Please modified '
                                               f'`Pack3DDetInputs` '
@@ -243,6 +251,8 @@ class Pack3DDetInputs(BaseTransform):
         data_sample.gt_instances_3d = gt_instances_3d
         data_sample.gt_instances = gt_instances
         data_sample.gt_pts_seg = gt_pts_seg
+        data_sample.gt_waveform_data = gt_waveform_data
+        
         if 'eval_ann_info' in results:
             data_sample.eval_ann_info = results['eval_ann_info']
         else:

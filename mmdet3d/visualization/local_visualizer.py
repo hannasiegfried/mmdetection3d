@@ -628,7 +628,7 @@ class Det3DLocalVisualizer(DetLocalVisualizer):
         """
 
         # Only visualize when there is at least one instance
-        if not len(instances) > 0:
+        if not instances or len(instances) == 0:
             return None
         
         if "gt_bboxes_3d" in instances:
@@ -978,6 +978,7 @@ class Det3DLocalVisualizer(DetLocalVisualizer):
             show_pcd_rgb (bool): Whether to show RGB point cloud. Defaults to
                 False.
         """
+        print(data_sample.lidar_path)
         assert vis_task in (
             'mono_det', 'multi-view_det', 'lidar_det', 'lidar_seg',
             'multi-modality_det'), f'got unexpected vis_task {vis_task}.'
@@ -1005,7 +1006,7 @@ class Det3DLocalVisualizer(DetLocalVisualizer):
             if 'gt_instances_3d' in data_sample:
                 gt_data_3d = self._draw_instances_3d(
                     data_input, data_sample.eval_ann_info,
-                    data_sample.metainfo, vis_task, show_pcd_rgb, palette)
+                    data_sample.metainfo, vis_task, show_pcd_rgb, [(0, 255, 0)])
             if 'gt_instances' in data_sample:
                 if len(data_sample.gt_instances) > 0:
                     assert 'img' in data_input

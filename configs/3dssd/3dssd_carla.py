@@ -80,15 +80,18 @@ model = dict(
             type='AnchorFreeBBoxCoder', num_dir_bins=12, with_rot=True)))
 
 # optimizer
-lr = 0.002  # max learning rate
+lr = 0.001  # max learning rate
 optim_wrapper = dict(
     type='OptimWrapper',
     optimizer=dict(type='AdamW', lr=lr, weight_decay=0.),
     clip_grad=dict(max_norm=35, norm_type=2),
+    paramwise_cfg=dict(
+        custom_keys={'waveform_model': dict(lr_mult=0.0003)}),
 )
+randomness = dict(seed=4)
 
 # training schedule for 1x
-train_cfg = dict(type='EpochBasedTrainLoop', max_epochs=80, val_interval=5)
+train_cfg = dict(type='EpochBasedTrainLoop', max_epochs=20, val_interval=5)
 val_cfg = dict(type='ValLoop')
 test_cfg = dict(type='TestLoop')
 

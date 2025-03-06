@@ -1,5 +1,6 @@
 import torch
 import yaml
+import numpy as np
 from fw_lidar.dsp.single_stage.single_stage_model import SingleStageModel
 
 def load_cfg(cfg_yaml_path):
@@ -9,16 +10,23 @@ def load_cfg(cfg_yaml_path):
 
 def load_model(path):
     model_cfg_path = f"{path}/configs/single_stage_swinunet_centerfov.yaml"
+    #weights_path = None
     weights_path = f"{path}/logs/2025-01-21_16-11-13_carla_singlestage_dist_single_stage_swinunet_centerfov_notag/state_dict_ep070.pth"
+    view_dir = np.load("/lhome/hasiegf/thesis/sensor_specs/view_direction_carla_60deg.npy")
+    
+    cfg = load_cfg(model_cfg_path)
+    model_cfg = cfg["Network"]
+    view_dir = torch.from_numpy(view_dir).float()
+    model_cfg["params"].update({"view_encoding": view_dir})
+    model = SingleStageModel(model_cfg, model_cfg["loss"])
 
-    model_cfg = load_cfg(model_cfg_path)
-    loss_cfg = model_cfg["Network"]["loss"]
-    model = SingleStageModel(model_cfg["Network"], loss_cfg)
-    weights = torch.load(weights_path)
-    weights_stripped = {}
-    for k, v in weights.items():
-        k_stripped = ".".join(k.split(".")[1:])
-        weights_stripped[k_stripped] = v
-    model.load_state_dict(weights_stripped)
-
+    if weights_path:
+        weights = torch.load(weights_path)
+        weights_stripped = {}
+        for k, v in weights.items():
+            k_stripped = ".".join(k.split(".")[1:])
+            weights_stripped[k_stripped] = v
+        model.load_state_dict(weights_stripped)
+        
+    model.cuda()
     return model
