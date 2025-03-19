@@ -59,7 +59,7 @@ def plot_points_pc(pc: np.array) -> None:
 def process_pc_torch(dist: torch.Tensor) -> torch.Tensor:
     """Converts the Carla point clouds to a format that PCDet accepts. For this, the
     distances are multiplied by the sensor specs."""
-    view_dir = torch.from_numpy(np.load("/lhome/hasiegf/thesis/sensor_specs/view_direction_carla_60deg.npy")).to(dist.device)
+    view_dir = torch.from_numpy(np.load("/home/hasiegf/thesis/sensor_specs/view_direction_carla_60deg.npy")).to(dist.device)
     
     filtered_dist = filter_points_torch(dist)
 

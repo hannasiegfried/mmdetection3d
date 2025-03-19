@@ -84,7 +84,7 @@ val_dataloader = dict(
         data_root=data_root,
         data_prefix=dict(pts='points'),
         ann_file = '/media/hasiegf/data/carla_mmdet/out/custom_infos_val.pkl',
-        pipeline=test_pipeline,
+        pipeline=eval_pipeline,
         modality=input_modality,
         metainfo=metainfo,
         test_mode=True,

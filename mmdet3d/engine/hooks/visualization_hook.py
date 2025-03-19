@@ -215,12 +215,7 @@ class Det3DVisualizationHook(Hook):
                 assert 'lidar_path' in data_sample, \
                     'lidar_path is not in data_sample'
                 lidar_path = data_sample.lidar_path
-                num_pts_feats = data_sample.num_pts_feats
-                #pts_bytes = get(lidar_path, backend_args=self.backend_args)
-                #points = np.frombuffer(pts_bytes, dtype=np.float32)
-                points = np.load("/media/hasiegf/data/carla_pcdet/points/" + lidar_path + ".npy")
-                points = points.reshape(-1, num_pts_feats)
-                data_input['points'] = points
+                data_input['points'] = data_sample.pred_points["points"]
                 if self.test_out_dir is not None:
                     o3d_save_path = osp.basename(lidar_path).split(
                         '.')[0] + '.png'

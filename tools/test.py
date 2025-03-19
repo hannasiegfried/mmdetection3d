@@ -14,32 +14,33 @@ from mmdet3d.utils import replace_ceph_backend
 def parse_args():
     parser = argparse.ArgumentParser(
         description='MMDet3D test (and eval) a model')
-    parser.add_argument('config', help='test config file path')
-    parser.add_argument('checkpoint', help='checkpoint file')
+    parser.add_argument('--config', default='configs/3dssd/3dssd_carla.py', help='test config file path')
+    parser.add_argument('--checkpoint', default='/media/hasiegf/data/mmdet3d/out/carla/waveform/model/supervised/semipretrained/epoch2/weight1000/epoch_5.pth', help='checkpoint file')
     parser.add_argument(
         '--work-dir',
         help='the directory to save the file containing evaluation metrics')
     parser.add_argument(
         '--ceph', action='store_true', help='Use ceph as data storage backend')
     parser.add_argument(
-        '--show', action='store_true', help='show prediction results')
+        '--show', default=True, action='store_true', help='show prediction results')
     parser.add_argument(
         '--show-dir',
         help='directory where painted images will be saved. '
         'If specified, it will be automatically saved '
         'to the work_dir/timestamp/show_dir')
     parser.add_argument(
-        '--score-thr', type=float, default=0.1, help='bbox score threshold')
+        '--score-thr', type=float, default=0.5, help='bbox score threshold')
     parser.add_argument(
         '--task',
         type=str,
+        default="lidar_det",
         choices=[
             'mono_det', 'multi-view_det', 'lidar_det', 'lidar_seg',
             'multi-modality_det'
         ],
         help='Determine the visualization method depending on the task.')
     parser.add_argument(
-        '--wait-time', type=float, default=2, help='the interval of show (s)')
+        '--wait-time', type=float, default=-1, help='the interval of show (s)')
     parser.add_argument(
         '--cfg-options',
         nargs='+',

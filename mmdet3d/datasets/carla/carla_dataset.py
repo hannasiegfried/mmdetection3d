@@ -79,8 +79,8 @@ class CarlaDataset(Det3DDataset):
         ann_info = self._remove_dontcare(ann_info)
         gt_bboxes_3d = LiDARInstance3DBoxes(ann_info['gt_bboxes_3d'])
         ann_info['gt_bboxes_3d'] = gt_bboxes_3d
-        #ann_info['gt_waveform_model'] = self.load_targets_waveform_model(info["lidar_path"])
-        ann_info['gt_waveform_model'] = {}
+        ann_info['gt_waveform_model'] = self.load_targets_waveform_model(info["lidar_path"])
+        #ann_info['gt_waveform_model'] = {}
         return ann_info
 
     def load_npy_or_npz(self, path: str, frame: str) -> np.array:

@@ -11,8 +11,8 @@ def load_cfg(cfg_yaml_path):
 def load_model(path):
     model_cfg_path = f"{path}/configs/single_stage_swinunet_centerfov.yaml"
     #weights_path = None
-    weights_path = f"{path}/logs/2025-01-21_16-11-13_carla_singlestage_dist_single_stage_swinunet_centerfov_notag/state_dict_ep070.pth"
-    view_dir = np.load("/lhome/hasiegf/thesis/sensor_specs/view_direction_carla_60deg.npy")
+    weights_path = f"{path}/logs/2025-03-18_09-09-45_carla_singlestage_single_stage_swinunet_centerfov_tag/state_dict_ep001.pth"
+    view_dir = np.load("/home/hasiegf/thesis/sensor_specs/view_direction_carla_60deg.npy")
     
     cfg = load_cfg(model_cfg_path)
     model_cfg = cfg["Network"]
@@ -26,7 +26,7 @@ def load_model(path):
         for k, v in weights.items():
             k_stripped = ".".join(k.split(".")[1:])
             weights_stripped[k_stripped] = v
-        model.load_state_dict(weights_stripped)
+        model.load_state_dict(weights)
         
     model.cuda()
     return model

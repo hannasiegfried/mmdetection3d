@@ -1083,6 +1083,10 @@ class Det3DLocalVisualizer(DetLocalVisualizer):
         else:
             drawn_img = None
 
+        gt_points = np.load("/media/hasiegf/data/carla_pcdet/points/" + data_sample.lidar_path + ".npy")
+        gt_points = gt_points.reshape(-1, 4)
+        self.set_points(self.rotate_points(gt_points, data_sample), pcd_mode=2, points_color=(0,0,255), vis_mode="add")
+
         if show:
             self.show(
                 o3d_save_path,
@@ -1103,3 +1107,17 @@ class Det3DLocalVisualizer(DetLocalVisualizer):
                              out_file[:-4] + '_2d' + out_file[-4:])
         else:
             self.add_image(name, drawn_img_3d, step)
+
+    def rotate_points(self, points, data_sample):
+        points = tensor2ndarray(points)
+        points, _ = to_depth_mode(points, None)
+
+        if 'axis_align_matrix' in data_sample.metainfo:
+            points = DepthPoints(points, points_dim=points.shape[1])
+            rot_mat = data_sample.metainfo['axis_align_matrix'][:3, :3]
+            trans_vec = data_sample.metainfo['axis_align_matrix'][:3, -1]
+            points.rotate(rot_mat.T)
+            points.translate(trans_vec)
+            points = tensor2ndarray(points.tensor)
+
+        return points

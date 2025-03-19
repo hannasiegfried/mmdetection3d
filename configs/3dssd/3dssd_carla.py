@@ -2,76 +2,6 @@ _base_ = [
     '../_base_/models/3dssd.py', '../_base_/datasets/carla.py',
     '../_base_/default_runtime.py'
 ]
-
-# dataset settings
-# dataset_type = 'CarlaDataset'
-# data_root = '/media/hasiegf/data/carla_pcdet/'
-# class_names = ['Car']
-# point_cloud_range = [2, -52, -2, 90, 52, 6]
-# input_modality = dict(use_lidar=True, use_camera=False)
-# backend_args = None
-# metainfo = dict(classes=class_names)
-
-# db_sampler = dict(
-#     data_root=data_root,
-#     info_path=data_root + 'out/custom_infos_train.pkl',
-#     rate=1.0,
-#     prepare=dict(filter_by_min_points=dict(Car=5)),
-#     classes=class_names,
-#     sample_groups=dict(Car=15),
-#     points_loader=dict(
-#         type='LoadPointsFromFile',
-#         coord_type='LIDAR',
-#         load_dim=4,
-#         use_dim=4,
-#         backend_args=backend_args),
-#     backend_args=backend_args)
-
-# train_pipeline = [
-#     dict(
-#         type='LoadPointsFromFile',
-#         coord_type='LIDAR',
-#         load_dim=4,
-#         use_dim=4,
-#         backend_args=backend_args),
-#     dict(type='LoadAnnotations3D', with_bbox_3d=True, with_label_3d=True),
-#     dict(type='PointsRangeFilter', point_cloud_range=point_cloud_range),
-#     dict(type='ObjectRangeFilter', point_cloud_range=point_cloud_range),
-    #dict(type='ObjectSample', db_sampler=db_sampler),
-    # dict(type='RandomFlip3D', flip_ratio_bev_horizontal=0.5),
-    # dict(
-    #     type='ObjectNoise',
-    #     num_try=100,
-    #     translation_std=[1.0, 1.0, 0],
-    #     global_rot_range=[0.0, 0.0],
-    #     rot_range=[-1.0471975511965976, 1.0471975511965976]),
-    # dict(
-    #     type='GlobalRotScaleTrans',
-    #     rot_range=[-0.78539816, 0.78539816],
-    #     scale_ratio_range=[0.9, 1.1]),
-    # 3DSSD can get a higher performance without this transform
-    # dict(type='BackgroundPointsFilter', bbox_enlarge_range=(0.5, 2.0, 0.5)),
-#     dict(type='PointSample', num_points=16384),
-#     dict(
-#         type='Pack3DDetInputs',
-#         keys=['points', 'gt_bboxes_3d', 'gt_labels_3d'])
-# ]
-
-# test_pipeline = [
-#     dict(
-#         type='LoadPointsFromFile',
-#         coord_type='LIDAR',
-#         load_dim=4,
-#         use_dim=4,
-#         backend_args=backend_args),
-#     dict(type='Pack3DDetInputs', keys=['points'])
-# ]
-
-# train_dataloader = dict(
-#    batch_size=1, dataset=dict(dataset=dict(pipeline=train_pipeline, )))
-# test_dataloader = dict(dataset=dict(pipeline=test_pipeline))
-# val_dataloader = dict(dataset=dict(pipeline=test_pipeline))
-
 # model settings
 model = dict(
     bbox_head=dict(
@@ -80,18 +10,20 @@ model = dict(
             type='AnchorFreeBBoxCoder', num_dir_bins=12, with_rot=True)))
 
 # optimizer
-lr = 0.001  # max learning rate
+lr = 0.002  # max learning rate
 optim_wrapper = dict(
     type='OptimWrapper',
     optimizer=dict(type='AdamW', lr=lr, weight_decay=0.),
     clip_grad=dict(max_norm=35, norm_type=2),
     paramwise_cfg=dict(
-        custom_keys={'waveform_model': dict(lr_mult=0.0003)}),
+        custom_keys={'waveform_model': dict(lr_mult=0.1)}),
 )
 randomness = dict(seed=4)
 
+default_hooks = dict(checkpoint=dict(type='CheckpointHook', interval=5))
+
 # training schedule for 1x
-train_cfg = dict(type='EpochBasedTrainLoop', max_epochs=20, val_interval=5)
+train_cfg = dict(type='EpochBasedTrainLoop', max_epochs=80, val_interval=5)
 val_cfg = dict(type='ValLoop')
 test_cfg = dict(type='TestLoop')
 
@@ -102,11 +34,12 @@ param_scheduler = [
         begin=0,
         end=80,
         by_epoch=True,
-        milestones=[45, 60],
-        gamma=0.1)
+        milestones=[5,10,45,60],
+        gamma=0.5)
 ]
 
 vis_backends = [dict(type='LocalVisBackend'), dict(type='TensorboardVisBackend')]
 visualizer = dict(
     type='Det3DLocalVisualizer', vis_backends=vis_backends, name='visualizer')
+custom_hooks = [dict(type='ErrorMapHook', log_dir=None)]
 

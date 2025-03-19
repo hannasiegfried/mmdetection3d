@@ -218,6 +218,42 @@ class Det3DDataSample(DetDataSample):
     def gt_waveform_data(self) -> None:
         del self._gt_waveform_data
 
+    @property
+    def pred_waveform_data(self) -> PointData:
+        return self._pred_waveform_data
+
+    @pred_waveform_data.setter
+    def pred_waveform_data(self, value: dict) -> None:
+        self.set_field(value, '_pred_waveform_data', dtype=dict)
+
+    @pred_waveform_data.deleter
+    def pred_waveform_data(self) -> None:
+        del self._pred_waveform_data
+
+    @property
+    def pred_points(self) -> PointData:
+        return self._pred_points
+
+    @pred_points.setter
+    def pred_points(self, value: dict) -> None:
+        self.set_field(value, '_pred_points', dtype=dict)
+
+    @pred_points.deleter
+    def pred_points(self) -> None:
+        del self._pred_points
+
+    @property
+    def gt_points(self) -> PointData:
+        return self._gt_points
+
+    @gt_points.setter
+    def gt_points(self, value: dict) -> None:
+        self.set_field(value, '_gt_points', dtype=dict)
+
+    @gt_points.deleter
+    def gt_points(self) -> None:
+        del self._gt_points
+
 
 SampleList = List[Det3DDataSample]
 OptSampleList = Optional[SampleList]

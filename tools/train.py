@@ -14,8 +14,8 @@ from mmdet3d.utils import replace_ceph_backend
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train a 3D detector')
-    parser.add_argument('config', help='train config file path')
-    parser.add_argument('--work-dir', help='the dir to save logs and models')
+    parser.add_argument('--config', default= "configs/3dssd/3dssd_carla.py", help='train config file path')
+    parser.add_argument('--work-dir', default="/media/hasiegf/data/mmdet3d/out/carla/waveform/model/supervised/semipretrained/epoch1/weight1000", help='the dir to save logs and models')
     parser.add_argument(
         '--amp',
         action='store_true',
@@ -127,6 +127,10 @@ def main():
     elif args.resume is not None:
         cfg.resume = True
         cfg.load_from = args.resume
+
+    for hook in cfg.custom_hooks:
+        if hook.type == 'ErrorMapHook':
+            hook.log_dir = args.work_dir
 
     # build the runner from config
     if 'runner_type' not in cfg:

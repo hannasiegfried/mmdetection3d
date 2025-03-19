@@ -32,7 +32,7 @@ class Base3DDetector(BaseDetector):
         super().__init__(
             data_preprocessor=data_preprocessor, init_cfg=init_cfg)
         #self.waveform_model = None
-        self.waveform_model = peakfinding_model.load_model("/lhome/hasiegf/thesis/fw_lidar")
+        self.waveform_model = peakfinding_model.load_model("/home/hasiegf/thesis/fw_lidar")
 
     def forward(self,
                 inputs: Union[dict, List[dict]],
@@ -85,15 +85,16 @@ class Base3DDetector(BaseDetector):
                 points_losses = self.waveform_model.get_loss(points, target)
                 inputs["points"][0] = self.transform_points(points)
                 det_losses = self.loss(inputs, data_samples, **kwargs)
-                det_losses["loss_waveform"] = points_losses["loss"] * 10
+                det_losses["loss_waveform"] = points_losses["loss"] * 1000
             else:
                 det_losses = self.loss(inputs, data_samples, **kwargs)
             return det_losses
         elif mode == 'predict':
             if self.waveform_model:
                 self.waveform_model.eval()
-                points = self.forward_waveform_model(inputs)
-                inputs["points"][0] = self.transform_points(points)
+                output = self.forward_waveform_model(inputs)
+                points = self.transform_points(output)
+                inputs["points"][0] = points
             if isinstance(data_samples[0], list):
                 # aug test
                 assert len(data_samples[0]) == 1, 'Only support ' \
@@ -103,7 +104,10 @@ class Base3DDetector(BaseDetector):
                                                   'time augmentation.'
                 return self.aug_test(inputs, data_samples, **kwargs)
             else:
-                return self.predict(inputs, data_samples, **kwargs)
+                predictions = self.predict(inputs, data_samples, **kwargs)
+                predictions[0].pred_points = {"points": points}
+                predictions[0].pred_waveform_data = output
+                return predictions
         elif mode == 'tensor':
             return self._forward(inputs, data_samples, **kwargs)
         else:
