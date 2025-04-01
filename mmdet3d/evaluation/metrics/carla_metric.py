@@ -14,6 +14,7 @@ from mmdet3d.evaluation import kitti_eval
 from mmdet3d.registry import METRICS
 from mmdet3d.structures import (Box3DMode, CameraInstance3DBoxes,
                                 LiDARInstance3DBoxes, points_cam2img)
+from copy import deepcopy
 
 @METRICS.register_module()
 class CarlaMetric(BaseMetric):
@@ -55,7 +56,8 @@ class CarlaMetric(BaseMetric):
                  prefix: Optional[str] = None,
                  format_only: bool = False,
                  collect_device: str = 'cpu',
-                 backend_args: Optional[dict] = None) -> None:
+                 backend_args: Optional[dict] = None,
+                 distance_threshold = 40) -> None:
         self.default_prefix = 'Carla metric'
         super(CarlaMetric, self).__init__(
             collect_device=collect_device, prefix=prefix)
@@ -70,6 +72,7 @@ class CarlaMetric(BaseMetric):
             if metric not in allowed_metrics:
                 raise KeyError("metric should be one of 'bbox', 'img_bbox', "
                                f'but got {metric}.')
+        self.distance_threshold = distance_threshold
 
     def process(self, data_batch: dict, data_samples: Sequence[dict]) -> None:
         """Process one batch of data samples and predictions.
@@ -258,11 +261,47 @@ class CarlaMetric(BaseMetric):
         ap_dict = dict()
         for name in results_dict:
             eval_types = ['bbox', 'bev', '3d']
-            ap_result_str, ap_dict_ = kitti_eval(
-                gt_annos, results_dict[name], classes, eval_types=eval_types)
-            for ap_type, ap in ap_dict_.items():
-                ap_dict[f'{name}/{ap_type}'] = float(f'{ap:.4f}')
+            
+            # Separate based on the distance 
+            close_gt, far_gt = self.filter_by_distance(gt_annos)
+            close_preds, far_preds = self.filter_by_distance(results_dict[name])
 
-            print_log(f'Results of {name}:\n' + ap_result_str, logger=logger)
+            # Evaluate on close objects
+            ap_result_str, ap_dict_ = kitti_eval(close_gt, close_preds, classes, eval_types=eval_types)
+            #for ap_type, ap in ap_dict_.items():
+            #    ap_dict[f'{name}/close/{ap_type}'] = float(f'{ap:.4f}')
+            
+            # Evaluate on far objects
+            ap_result_str_far, ap_dict_far_ = kitti_eval(far_gt, far_preds, classes, eval_types=eval_types)
+            #for ap_type, ap in ap_dict_far_.items():
+            #    ap_dict[f'{name}/far/{ap_type}'] = float(f'{ap:.4f}')
+
+             # Evaluate on all objects
+            ap_result_str_all, ap_dict_all_ = kitti_eval(gt_annos, results_dict[name], classes, eval_types=eval_types)
+            for ap_type, ap in ap_dict_all_.items():
+                ap_dict[f'{name}/all/{ap_type}'] = float(f'{ap:.4f}')
+            
+            # Print results
+            print_log(f'Results of {name} (close objects):\n' + ap_result_str, logger=logger)
+            print_log(f'Results of {name} (far objects):\n' + ap_result_str_far, logger=logger)
+            print_log(f'Results of {name} (all objects):\n' + ap_result_str_all, logger=logger)
 
         return ap_dict
+
+    # Euclidean distance
+    def calculate_distances(self, x, y, z):
+        return np.sqrt(x**2 + y**2 + z**2)
+
+    def filter_by_distance(self, annotations):
+        close_objects = deepcopy(annotations)
+        far_objects = deepcopy(annotations)
+
+        for idx, scene in enumerate(annotations):
+            distances = self.calculate_distances(scene["location"][:,0], scene["location"][:,1], scene["location"][:,2])
+            for obj, distance in enumerate(distances):
+                if distance <= self.distance_threshold:
+                    far_objects[idx]["name"][obj] = "ignore"
+                else:
+                    close_objects[idx]["name"][obj] = "ignore"
+            
+        return close_objects, far_objects

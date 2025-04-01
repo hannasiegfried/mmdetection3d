@@ -15,7 +15,7 @@ from mmdet3d.utils import replace_ceph_backend
 def parse_args():
     parser = argparse.ArgumentParser(description='Train a 3D detector')
     parser.add_argument('--config', default= "configs/3dssd/3dssd_carla.py", help='train config file path')
-    parser.add_argument('--work-dir', default="/media/hasiegf/data/mmdet3d/out/carla/waveform/model/supervised/semipretrained/epoch1/weight1000", help='the dir to save logs and models')
+    parser.add_argument('--work-dir', default="/media/hasiegf/data/mmdet3d/out/carla/waveform/model/supervised/semipretrained/epoch1/no_threshold/filtered", help='the dir to save logs and models')
     parser.add_argument(
         '--amp',
         action='store_true',

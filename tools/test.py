@@ -15,14 +15,14 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description='MMDet3D test (and eval) a model')
     parser.add_argument('--config', default='configs/3dssd/3dssd_carla.py', help='test config file path')
-    parser.add_argument('--checkpoint', default='/media/hasiegf/data/mmdet3d/out/carla/waveform/model/supervised/semipretrained/epoch2/weight1000/epoch_5.pth', help='checkpoint file')
+    parser.add_argument('--checkpoint', default='/media/hasiegf/data/mmdet3d/out/carla/waveform/model/supervised/semipretrained/epoch1/no_threshold/filtered/epoch_40.pth', help='checkpoint file')
     parser.add_argument(
         '--work-dir',
         help='the directory to save the file containing evaluation metrics')
     parser.add_argument(
         '--ceph', action='store_true', help='Use ceph as data storage backend')
     parser.add_argument(
-        '--show', default=True, action='store_true', help='show prediction results')
+        '--show', default=False, action='store_true', help='show prediction results')
     parser.add_argument(
         '--show-dir',
         help='directory where painted images will be saved. '

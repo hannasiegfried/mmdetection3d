@@ -8,8 +8,9 @@ class PeakFinding:
         self.pf = PFScipy(**self.pf_cfg["params"])
 
     def forward(self, waveform):
-        tofs, tots = [], []
-        tof, tot = self.pf.get_tof_tot_values(waveform)
+        tofs, tots, peak_heights = [], [], []
+        tof, tot, peak_height = self.pf.get_tof_tot_values(waveform)
         tofs.append(tof)
         tots.append(tot)
-        return dict(tof=np.asarray(tofs), tot=np.asarray(tots))
+        peak_heights.append(peak_height)
+        return dict(tof=np.asarray(tofs), tot=np.asarray(tots), peak_heights=np.asarray(peak_heights))

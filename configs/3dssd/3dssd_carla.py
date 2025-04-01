@@ -37,6 +37,14 @@ param_scheduler = [
         milestones=[5,10,45,60],
         gamma=0.5)
 ]
+# param_scheduler = [
+#     dict(
+#         type='OneCycleLR',
+#         eta_max=0.02,
+#         total_steps=239520
+#     )
+
+# ]
 
 vis_backends = [dict(type='LocalVisBackend'), dict(type='TensorboardVisBackend')]
 visualizer = dict(

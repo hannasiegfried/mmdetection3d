@@ -325,9 +325,9 @@ class Det3DLocalVisualizer(DetLocalVisualizer):
                 self.points_colors[indices] = np.array(bbox_color[i]) / 255.
 
         # update points colors
-        if self.pcd is not None:
-            self.pcd.colors = o3d.utility.Vector3dVector(self.points_colors)
-            self.o3d_vis.update_geometry(self.pcd)
+        #if self.pcd is not None:
+        #    self.pcd.colors = o3d.utility.Vector3dVector(self.points_colors)
+        #    self.o3d_vis.update_geometry(self.pcd)
 
     def set_bev_image(self,
                       bev_image: Optional[np.ndarray] = None,

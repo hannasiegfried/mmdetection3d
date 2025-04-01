@@ -13,6 +13,7 @@ from mmdet3d.utils.typing_utils import (OptConfigType, OptInstanceList,
                                         OptMultiConfig)
 from mmdet3d.datasets.carla import peakfinding_baseline, pc_converter, peakfinding_model
 from fw_lidar.dsp.single_stage.single_stage_model import criterion_class_offset
+import matplotlib.pyplot as plt
 
 @MODELS.register_module()
 class Base3DDetector(BaseDetector):
@@ -105,8 +106,11 @@ class Base3DDetector(BaseDetector):
                 return self.aug_test(inputs, data_samples, **kwargs)
             else:
                 predictions = self.predict(inputs, data_samples, **kwargs)
-                predictions[0].pred_points = {"points": points}
-                predictions[0].pred_waveform_data = output
+                if self.waveform_model:
+                    predictions[0].pred_points = {"points": points}
+                    predictions[0].pred_waveform_data = output
+                else:
+                    predictions[0].pred_points = {"points": inputs["points"][0]}
                 return predictions
         elif mode == 'tensor':
             return self._forward(inputs, data_samples, **kwargs)
@@ -120,14 +124,28 @@ class Base3DDetector(BaseDetector):
         return output
     
     def transform_points(self, output):
-        pred_tof = output["tof"]
+        pred_tof = output["tof"].squeeze(-1)
         pred_score = output["patch_class"][..., 0]
-        threshold = max(torch.quantile(pred_score, 0.95).item(), 0.5)
-        pred_tof[pred_score < threshold] = 0  
-        sort_idx = torch.argsort(-pred_score, dim=-1)
-        pred_tof_sorted = torch.take_along_dim(pred_tof, sort_idx[..., None], dim=-2)
-        output = pred_tof_sorted.squeeze(-1).squeeze(0)
-        points = pc_converter.process_pc_torch(output)
+        features = output["features"]
+        # quantile = torch.quantile(pred_score, 0.95).item()
+        # threshold = max(quantile, 0.5)
+        # if (pred_score > threshold).sum().item() < 5000:
+        #    threshold = quantile
+        # pred_tof[pred_score < threshold] = 0  
+        # pred_tof = pred_tof.squeeze(0)
+        # points = pc_converter.process_pc_torch(pred_tof, features)
+        # for i in range(20):
+        #     plt.plot(pred_score[0,i,0,:].cpu().detach().numpy())
+        #     plt.savefig(f"pred_score_{i}.png")
+        #     plt.clf()        
+        #  
+        _max, indices = torch.max(pred_score, dim=-1, keepdim=True)
+        mask = indices != pred_score.shape[-1] - 1
+        filtered_tof = torch.gather(pred_tof, dim=-1, index=indices).squeeze(0)
+        filtered_tof = filtered_tof * mask.float()
+        filtered_features = torch.gather(features, dim=3, index=indices.unsqueeze(-1).expand(-1, -1, -1, -1, 32))
+        filtered_features = filtered_features * mask.unsqueeze(-1).float()
+        points = pc_converter.process_pc_torch(filtered_tof, filtered_features)
         return points.to(torch.float32)
 
     def add_pred_to_datasample(

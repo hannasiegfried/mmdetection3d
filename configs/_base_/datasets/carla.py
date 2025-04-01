@@ -37,6 +37,11 @@ test_pipeline = [
 ]
 # construct a pipeline for data and gt loading in show function
 eval_pipeline = [
+    # dict(
+    #     type='LoadPointsFromFile',
+    #     coord_type='LIDAR',
+    #     load_dim=4,  # x, y, z, intensity
+    #     use_dim=4),
     dict(
         type='LoadPointsForWaveformModelIntegration',
         data_path=data_root),
