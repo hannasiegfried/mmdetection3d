@@ -26,7 +26,7 @@ def load_model(path):
         for k, v in weights.items():
             k_stripped = ".".join(k.split(".")[1:])
             weights_stripped[k_stripped] = v
-        model.load_state_dict(weights)
+        model.load_state_dict(weights, strict=False)
         
     model.cuda()
     return model
