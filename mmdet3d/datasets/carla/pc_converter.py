@@ -65,19 +65,21 @@ def process_pc_torch(dist: torch.Tensor, features: torch.Tensor = None) -> torch
     distances are multiplied by the sensor specs."""
     view_dir = torch.from_numpy(np.load("/home/hasiegf/thesis/sensor_specs/view_direction_carla_60deg.npy")).to(dist.device)
     
-    filtered_dist = filter_points_torch(dist)
+    #filtered_dist = filter_points_torch(dist)
+    #dist = torch.where(dist < 1, torch.tensor(0.0, device=dist.device), dist)
 
-    pc = filtered_dist.unsqueeze(-1) * view_dir.unsqueeze(2)
+    pc = dist.unsqueeze(-1) * view_dir.unsqueeze(2)
     pc = pc.view(-1, 3)
 
     # Add intensity
     if features is not None:
         pc = torch.cat((pc, features.reshape(-1, features.shape[-1])), dim=1)
     else:
-        pc = torch.cat((pc, torch.zeros((pc.size(0), 1), device=pc.device)), dim=1)
+        pc = torch.cat((pc, torch.ones((pc.size(0), 1), device=pc.device)), dim=1)
     
     # Select only rows that do not contain NaN values
-    pc = pc[~torch.isnan(pc).any(dim=1)]
+    #pc = pc[~torch.isnan(pc).any(dim=1)]
+    pc = pc[~(pc == 0).any(dim=1)]
     # Convert distances
     pc[:, [0, 1, 2]] = pc[:, [0, 1, 2]] * TOF_TO_M
 
@@ -89,6 +91,6 @@ def process_pc_torch(dist: torch.Tensor, features: torch.Tensor = None) -> torch
 
 def filter_points_torch(points: torch.Tensor) -> torch.Tensor:
     mask = points == 0
-    points[mask] = float('nan')
+    points[mask] = float('nan')  # This is now safe
     return points
     

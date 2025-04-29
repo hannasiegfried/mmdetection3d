@@ -10,8 +10,8 @@ def load_cfg(cfg_yaml_path):
 
 def load_model(path):
     model_cfg_path = f"{path}/configs/single_stage_swinunet_centerfov.yaml"
-    #weights_path = None
-    weights_path = f"{path}/logs/2025-03-25_17-42-31_carla_singlestage_single_stage_swinunet_centerfov_tag/state_dict_ep001.pth"
+    weights_path = None
+    #weights_path = f"{path}/logs/2025-04-16_17-51-23_carla_singlestage_single_stage_swinunet_centerfov_tag/state_dict_ep018.pth"
     view_dir = np.load("/home/hasiegf/thesis/sensor_specs/view_direction_carla_60deg.npy")
     
     cfg = load_cfg(model_cfg_path)

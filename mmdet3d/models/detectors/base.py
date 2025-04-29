@@ -32,8 +32,8 @@ class Base3DDetector(BaseDetector):
                  init_cfg: OptMultiConfig = None) -> None:
         super().__init__(
             data_preprocessor=data_preprocessor, init_cfg=init_cfg)
-        self.waveform_model = None
-        #self.waveform_model = peakfinding_model.load_model("/home/hasiegf/thesis/fw_lidar")
+        #self.waveform_model = None
+        self.waveform_model = peakfinding_model.load_model("/home/hasiegf/thesis/fw_lidar")
 
     def forward(self,
                 inputs: Union[dict, List[dict]],
@@ -86,7 +86,7 @@ class Base3DDetector(BaseDetector):
                 points_losses = self.waveform_model.get_loss(points, target)
                 inputs["points"][0] = self.transform_points(points)
                 det_losses = self.loss(inputs, data_samples, **kwargs)
-                det_losses["loss_waveform"] = points_losses["loss"] * 1000
+                det_losses["loss_waveform"] = points_losses["loss"]  #1000 for picking, 10 for full_tof, 100 for transformer decoder old
             else:
                 det_losses = self.loss(inputs, data_samples, **kwargs)
             return det_losses
@@ -128,28 +128,24 @@ class Base3DDetector(BaseDetector):
         pred_score = output["patch_class"][..., 0]
         features = output["features"]
         ## For simple thresholding
-        # quantile = torch.quantile(pred_score, 0.95).item()
-        # threshold = max(quantile, 0.5)
-        # if (pred_score > threshold).sum().item() < 5000:
-        #    threshold = quantile
-        # pred_tof[pred_score < threshold] = 0  
+        quantile = torch.quantile(pred_score, 0.5).item() #0.95 
+        threshold = 0.5 #max(quantile, 0.2)
+        if (pred_score > threshold).sum().item() < 5000:
+           threshold = quantile
+        #pred_tof[pred_score < threshold] = 0  
+        pred_tof = torch.where(pred_score < threshold, torch.tensor(0.0, device=pred_tof.device), pred_tof)
+        #pred_tof = pred_tof * 33 * 64
         points = pc_converter.process_pc_torch(pred_tof, features)
         ## Debug plot
         # for i in range(20):
         #     plt.plot(pred_score[0,i,0,:].cpu().detach().numpy())
         #     plt.savefig(f"pred_score_{i}.png")
         #     plt.clf()        
-        ## Max threshold 
-        # _max, indices = torch.max(pred_score, dim=-1, keepdim=True)
-        # mask = indices != pred_score.shape[-1] - 1
-        # filtered_tof = torch.gather(pred_tof, dim=-1, index=indices).squeeze(0)
-        # filtered_tof = filtered_tof * mask.float()
-        # filtered_features = torch.gather(features, dim=3, index=indices.unsqueeze(-1).expand(-1, -1, -1, -1, 32))
-        # filtered_features = filtered_features * mask.unsqueeze(-1).float()
-        # points = pc_converter.process_pc_torch(filtered_tof, filtered_features)
-        # Continuous distance
-        #pred_score_per_ray = torch.sum(pred_score, dim=-1).unsqueeze(-1)
-        #points = pc_converter.process_pc_torch(output["full_tof"])
+        ## Continuous distance
+        # pred_score_per_ray = torch.sum(pred_score, dim=-1).unsqueeze(-1)
+        # full_tof = output["full_tof"]
+        # full_tof[pred_score_per_ray < 0.7] = 0
+        # points = pc_converter.process_pc_torch(full_tof)
         return points.to(torch.float32)
 
     def add_pred_to_datasample(

@@ -20,7 +20,7 @@ optim_wrapper = dict(
 )
 randomness = dict(seed=4)
 
-default_hooks = dict(checkpoint=dict(type='CheckpointHook', interval=5))
+default_hooks = dict(checkpoint=dict(type='CheckpointHook', interval=1))
 
 # training schedule for 1x
 train_cfg = dict(type='EpochBasedTrainLoop', max_epochs=80, val_interval=5)
@@ -49,5 +49,6 @@ param_scheduler = [
 vis_backends = [dict(type='LocalVisBackend'), dict(type='TensorboardVisBackend')]
 visualizer = dict(
     type='Det3DLocalVisualizer', vis_backends=vis_backends, name='visualizer')
-custom_hooks = [dict(type='ErrorMapHook', log_dir=None)]
+custom_hooks = [dict(type='ChamferDistanceHook', log_dir=None), 
+                dict(type='BBHook', log_dir=None)]
 
