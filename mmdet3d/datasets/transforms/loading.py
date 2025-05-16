@@ -612,7 +612,7 @@ class LoadPointsFromWaveformBaseline(BaseTransform):
         waveform /= 255.0
         waveform = torch.as_tensor(waveform)
         output = self.waveform_model.forward(waveform)
-        points = pc_converter.process_pc(output["tof"], output["peak_heights"])
+        points = pc_converter.process_pc(output["tof"])
     
         points_class = get_points_type(self.coord_type)
         points = points_class(

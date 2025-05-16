@@ -125,27 +125,22 @@ class Base3DDetector(BaseDetector):
     
     def transform_points(self, output):
         pred_tof = output["tof"].squeeze(-1)
-        pred_score = output["patch_class"][..., 0]
         features = output["features"]
-        ## For simple thresholding
+
+        ## For simple thresholding and decoder approach
+        pred_score = output["patch_class"][..., 0]
         quantile = torch.quantile(pred_score, 0.5).item() #0.95 
         threshold = 0.5 #max(quantile, 0.2)
         if (pred_score > threshold).sum().item() < 5000:
-           threshold = quantile
-        #pred_tof[pred_score < threshold] = 0  
+            threshold = quantile
         pred_tof = torch.where(pred_score < threshold, torch.tensor(0.0, device=pred_tof.device), pred_tof)
-        #pred_tof = pred_tof * 33 * 64
+
+        ## For mask approach
+        # pred_score = output["patch_class"].max(dim=-2)[1]
+        # if (pred_score == 33).sum().item() < 5000:
+        #     pred_tof = torch.where(pred_score == 33, torch.tensor(0.0, device=pred_tof.device), pred_tof)
+        
         points = pc_converter.process_pc_torch(pred_tof, features)
-        ## Debug plot
-        # for i in range(20):
-        #     plt.plot(pred_score[0,i,0,:].cpu().detach().numpy())
-        #     plt.savefig(f"pred_score_{i}.png")
-        #     plt.clf()        
-        ## Continuous distance
-        # pred_score_per_ray = torch.sum(pred_score, dim=-1).unsqueeze(-1)
-        # full_tof = output["full_tof"]
-        # full_tof[pred_score_per_ray < 0.7] = 0
-        # points = pc_converter.process_pc_torch(full_tof)
         return points.to(torch.float32)
 
     def add_pred_to_datasample(

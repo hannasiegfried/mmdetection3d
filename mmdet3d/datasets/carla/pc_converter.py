@@ -66,8 +66,8 @@ def process_pc_torch(dist: torch.Tensor, features: torch.Tensor = None) -> torch
     view_dir = torch.from_numpy(np.load("/home/hasiegf/thesis/sensor_specs/view_direction_carla_60deg.npy")).to(dist.device)
     
     #filtered_dist = filter_points_torch(dist)
-    #dist = torch.where(dist < 1, torch.tensor(0.0, device=dist.device), dist)
-
+    #dist = torch.where(dist < 2, torch.tensor(0.0, device=dist.device), dist)
+    
     pc = dist.unsqueeze(-1) * view_dir.unsqueeze(2)
     pc = pc.view(-1, 3)
 
