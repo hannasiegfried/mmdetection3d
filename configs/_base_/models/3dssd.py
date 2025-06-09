@@ -3,7 +3,7 @@ model = dict(
     data_preprocessor=dict(type='Det3DDataPreprocessor'),
     backbone=dict(
         type='PointNet2SAMSG',
-        in_channels=35,
+        in_channels=4,#35,
         num_points=(4096, 512, (256, 256)),
         radii=((0.2, 0.4, 0.8), (0.4, 0.8, 1.6), (1.6, 3.2, 4.8)),
         num_samples=((32, 32, 64), (32, 32, 64), (32, 32, 32)),

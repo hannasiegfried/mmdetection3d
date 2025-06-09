@@ -57,11 +57,17 @@ class PointRCNN(TwoStage3DDetector):
             dict: Features from the backbone+neck and raw points.
         """
         points = torch.stack(batch_inputs_dict['points'])
-        x = self.backbone(points)
+        y = self.backbone(points)
 
         if self.with_neck:
-            x = self.neck(x)
-        return dict(
+            x = self.neck(y)
+        return_dict = dict(
             fp_features=x['fp_features'].clone(),
             fp_points=x['fp_xyz'].clone(),
             raw_points=points)
+        
+        for k, v in return_dict.items():
+            if torch.isnan(v).any() or torch.isinf(v).any():
+                print(f"NaNs/Infs detected in {k}")
+
+        return return_dict

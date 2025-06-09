@@ -176,7 +176,11 @@ class PointRPNHead(BaseModule):
         semantic_loss = self.cls_loss(semantic_points,
                                       semantic_points_label.reshape(-1),
                                       semantic_loss_weight.reshape(-1))
-        semantic_loss /= positive_mask.float().sum()
+        semantic_loss /= positive_mask.float().sum() + 1e-6
+        if positive_mask.float().sum() == 0:
+            raise ValueError(
+                'No positive points found, please check your model and data.')
+        #semantic_loss = 0
         losses = dict(bbox_loss=bbox_loss, semantic_loss=semantic_loss)
 
         return losses
@@ -240,7 +244,10 @@ class PointRPNHead(BaseModule):
 
         points_mask, assignment = self._assign_targets_by_points_inside(
             gt_bboxes_3d, points)
-        gt_bboxes_3d_tensor = gt_bboxes_3d_tensor[assignment]
+        try:
+            gt_bboxes_3d_tensor = gt_bboxes_3d_tensor[assignment]
+        except IndexError:
+            print("HIS")
         mask_targets = gt_labels_3d[assignment]
 
         bbox_targets = self.bbox_coder.encode(gt_bboxes_3d_tensor,
@@ -254,6 +261,9 @@ class PointRPNHead(BaseModule):
         negative_mask = (points_mask.max(1)[0] == 0)
 
         point_targets = points[..., 0:3]
+        
+        if sum(item == True for item in positive_mask) == 0:
+            print('Warning: mask_targets contains 0, ')
         return (bbox_targets, mask_targets, positive_mask, negative_mask,
                 point_targets)
 
@@ -498,6 +508,14 @@ class PointRPNHead(BaseModule):
                        raw_points) + (batch_gt_instances_3d, batch_input_metas,
                                       batch_gt_instances_ignore)
         losses = self.loss_by_feat(*loss_inputs)
+
+        # for k, v in losses.items():
+        #     if torch.isnan(v) or torch.isinf(v):
+        #         v = 0
+        #         print(k)
+                #raise ValueError(
+                #    f'Loss {k} contains NaN or Inf, please check your model '
+                #   'and data.')
 
         predictions = self.predict_by_feat(
             raw_points,

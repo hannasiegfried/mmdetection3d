@@ -16,7 +16,7 @@ optim_wrapper = dict(
     optimizer=dict(type='AdamW', lr=lr, weight_decay=0.),
     clip_grad=dict(max_norm=35, norm_type=2),
     paramwise_cfg=dict(
-        custom_keys={'waveform_model': dict(lr_mult=0.1)}),
+        custom_keys={'waveform_model': dict(lr_mult=0.01)}),
 )
 randomness = dict(seed=4)
 

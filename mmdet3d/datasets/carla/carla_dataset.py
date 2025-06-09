@@ -14,7 +14,7 @@ from ..det3d_dataset import Det3DDataset
 class CarlaDataset(Det3DDataset):
     """CARLA Dataset."""
     METAINFO = {
-        'classes': ('Car'),#, 'Pedestrian', 'Cyclist'),
+        'classes': ('Car'), #, 'Pedestrian'), #, 'Cyclist'),
         'palette': [
             (255, 0, 0),  # red
             (0, 255, 0),  # green
@@ -24,7 +24,7 @@ class CarlaDataset(Det3DDataset):
     class_mapping = {
         'Car': 0,
         'Pedestrian': -1,
-        #'Cyclist': 2,
+        'Cyclist': -1,
     }
         
     def parse(self, info: dict) -> Union[dict, None]:
@@ -80,8 +80,8 @@ class CarlaDataset(Det3DDataset):
         ann_info = self._remove_dontcare(ann_info)
         gt_bboxes_3d = LiDARInstance3DBoxes(ann_info['gt_bboxes_3d'])
         ann_info['gt_bboxes_3d'] = gt_bboxes_3d
-        ann_info['gt_waveform_model'] = self.load_targets_waveform_model(info["lidar_path"])
-        #ann_info['gt_waveform_model'] = {}
+        #ann_info['gt_waveform_model'] = self.load_targets_waveform_model(info["lidar_path"])
+        ann_info['gt_waveform_model'] = {}
         return ann_info
 
     def load_npy_or_npz(self, path: str, frame: str) -> np.array:

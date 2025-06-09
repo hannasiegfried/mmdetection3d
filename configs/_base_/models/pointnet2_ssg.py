@@ -4,7 +4,7 @@ model = dict(
     data_preprocessor=dict(type='Det3DDataPreprocessor'),
     backbone=dict(
         type='PointNet2SASSG',
-        in_channels=6,  # [xyz, rgb], should be modified with dataset
+        in_channels=4,  # [xyz, rgb], should be modified with dataset
         num_points=(1024, 256, 64, 16),
         radius=(0.1, 0.2, 0.4, 0.8),
         num_samples=(32, 32, 32, 32),

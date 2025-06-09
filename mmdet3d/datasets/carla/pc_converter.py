@@ -75,11 +75,11 @@ def process_pc_torch(dist: torch.Tensor, features: torch.Tensor = None) -> torch
     if features is not None:
         pc = torch.cat((pc, features.reshape(-1, features.shape[-1])), dim=1)
     else:
-        pc = torch.cat((pc, torch.ones((pc.size(0), 1), device=pc.device)), dim=1)
+        pc = torch.cat((pc, torch.zeros((pc.size(0), 1), device=pc.device)), dim=1)
     
     # Select only rows that do not contain NaN values
     #pc = pc[~torch.isnan(pc).any(dim=1)]
-    pc = pc[~(pc == 0).any(dim=1)]
+    pc = pc[~(pc[:, :3] == 0).any(dim=1)]
     # Convert distances
     pc[:, [0, 1, 2]] = pc[:, [0, 1, 2]] * TOF_TO_M
 

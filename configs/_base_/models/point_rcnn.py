@@ -41,6 +41,13 @@ model = dict(
             gamma=2.0,
             alpha=0.25,
             loss_weight=1.0),
+        # cls_loss=dict(
+        #     type='mmdet.CrossEntropyLoss',
+        #     use_sigmoid=False,
+        #     reduction='sum',
+        #     loss_weight=1.0,
+        #     ignore_index=1,  # important!
+        # ),
         bbox_loss=dict(
             type='mmdet.SmoothL1Loss',
             beta=1.0 / 9.0,
@@ -52,7 +59,7 @@ model = dict(
             # code_size: (center residual (3), size regression (3),
             #             torch.cos(yaw) (1), torch.sin(yaw) (1)
             use_mean_size=True,
-            mean_size=[[3.9, 1.6, 1.56]])), #, [0.8, 0.6, 1.73], [1.76, 0.6,1.73]])),
+            mean_size=[[3.9, 1.6, 1.56]])), #, [0.8, 0.6, 1.73]])), #, [1.76, 0.6, 1.73]])),
     roi_head=dict(
         type='PointRCNNRoIHead',
         bbox_roi_extractor=dict(
@@ -97,6 +104,15 @@ model = dict(
                 nms_post=512)),
         rcnn=dict(
             assigner=[
+                dict(  # for Car
+                    type='Max3DIoUAssigner',
+                    iou_calculator=dict(
+                        type='BboxOverlaps3D', coordinate='lidar'),
+                    pos_iou_thr=0.55,
+                    neg_iou_thr=0.55,
+                    min_pos_iou=0.55,
+                    ignore_iof_thr=-1,
+                    match_low_quality=False),
                 # dict(  # for Pedestrian
                 #     type='Max3DIoUAssigner',
                 #     iou_calculator=dict(
@@ -114,16 +130,7 @@ model = dict(
                 #     neg_iou_thr=0.55,
                 #     min_pos_iou=0.55,
                 #     ignore_iof_thr=-1,
-                #     match_low_quality=False),
-                dict(  # for Car
-                    type='Max3DIoUAssigner',
-                    iou_calculator=dict(
-                        type='BboxOverlaps3D', coordinate='lidar'),
-                    pos_iou_thr=0.55,
-                    neg_iou_thr=0.55,
-                    min_pos_iou=0.55,
-                    ignore_iof_thr=-1,
-                    match_low_quality=False)
+                #     match_low_quality=False)
             ],
             sampler=dict(
                 type='IoUNegPiecewiseSampler',

@@ -174,6 +174,8 @@ class PointNet2SAMSG(BasePointNet):
         for i in range(self.num_sa):
             cur_xyz, cur_features, cur_indices = self.SA_modules[i](
                 sa_xyz[i], sa_features[i])
+            if torch.isnan(cur_features).any():
+                print(f"NaNs detected")
             if self.aggregation_mlps[i] is not None:
                 cur_features = self.aggregation_mlps[i](cur_features)
             sa_xyz.append(cur_xyz)

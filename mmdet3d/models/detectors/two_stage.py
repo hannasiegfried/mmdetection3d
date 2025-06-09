@@ -6,6 +6,7 @@ from mmdet3d.registry import MODELS
 from mmdet3d.utils import ConfigType, OptConfigType, OptMultiConfig
 from ...structures.det3d_data_sample import SampleList
 from .base import Base3DDetector
+import torch
 
 
 @MODELS.register_module()
@@ -83,6 +84,7 @@ class TwoStage3DDetector(Base3DDetector):
         """
         feats_dict = self.extract_feat(batch_inputs_dict)
 
+        
         losses = dict()
 
         # RPN forward and loss

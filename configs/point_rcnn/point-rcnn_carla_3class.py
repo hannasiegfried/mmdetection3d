@@ -3,7 +3,7 @@ _base_ = [
     '../_base_/default_runtime.py', '../_base_/schedules/cyclic-40e.py'
 ]
 
-lr = 0.0001  # max learning rate
+lr = 0.001  # max learning rate
 optim_wrapper = dict(optimizer=dict(lr=lr, betas=(0.95, 0.85)))
 train_cfg = dict(by_epoch=True, max_epochs=80, val_interval=2)
 

@@ -9,9 +9,9 @@ def load_cfg(cfg_yaml_path):
     return cfg
 
 def load_weights(model):
-    weights_path = None
+    #weights_path = None
     #weights_path = f"{path}/logs/2025-04-30_22-25-26_carla_singlestage_single_stage_swinunet_centerfov_tag/state_dict_ep014.pth"
-    #weights_path = '/media/hasiegf/data/mmdet3d/out/carla/waveform/model/supervised/epoch22/epoch_60.pth'
+    weights_path = '/media/hasiegf/data/mmdet3d/out/carla/transformer/queries/1/relu/epoch_80.pth'
     if weights_path:
         weights = torch.load(weights_path, weights_only=False)
         weights_stripped = {}
