@@ -14,10 +14,11 @@ lr = 0.002  # max learning rate
 optim_wrapper = dict(
     type='OptimWrapper',
     optimizer=dict(type='AdamW', lr=lr, weight_decay=0.),
-    clip_grad=dict(max_norm=35, norm_type=2),
+    clip_grad=dict(max_norm=1, norm_type=2),
     paramwise_cfg=dict(
-        custom_keys={'waveform_model': dict(lr_mult=0.01)}),
+        custom_keys={'waveform_model': dict(lr_mult=0.1)}), #0.01 for unsupervised, 0.1 for supervised
 )
+
 randomness = dict(seed=4)
 
 default_hooks = dict(checkpoint=dict(type='CheckpointHook', interval=1))
@@ -37,18 +38,12 @@ param_scheduler = [
         milestones=[5,10,45,60],
         gamma=0.5)
 ]
-# param_scheduler = [
-#     dict(
-#         type='OneCycleLR',
-#         eta_max=0.02,
-#         total_steps=239520
-#     )
-
-# ]
 
 vis_backends = [dict(type='LocalVisBackend'), dict(type='TensorboardVisBackend')]
 visualizer = dict(
     type='Det3DLocalVisualizer', vis_backends=vis_backends, name='visualizer')
+#visualizer = dict(type='PyVistaVisualizer', vis_backends=vis_backends, name='visualizer')
 custom_hooks = [dict(type='ChamferDistanceHook', log_dir=None), 
                 dict(type='BBHook', log_dir=None)]
+                #dict(type='FreezeHook', freeze_epochs=5)]
 

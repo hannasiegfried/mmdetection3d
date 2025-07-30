@@ -5,7 +5,8 @@ from .visualization_hook import Det3DVisualizationHook
 from .error_map_hook import ErrorMapHook
 from .chamfer_distance_hook import ChamferDistanceHook
 from .bb_hook import BBHook
+from .freeze_hook import FreezeHook
 
 __all__ = [
-    'Det3DVisualizationHook', 'BenchmarkHook', 'DisableObjectSampleHook', 'ErrorMapHook', 'ChamferDistanceHook', 'BBHook'
+    'Det3DVisualizationHook', 'BenchmarkHook', 'DisableObjectSampleHook', 'ErrorMapHook', 'ChamferDistanceHook', 'BBHook', 'FreezeHook'
 ]

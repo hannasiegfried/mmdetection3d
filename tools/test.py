@@ -15,7 +15,7 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description='MMDet3D test (and eval) a model')
     parser.add_argument('--config', default='configs/3dssd/3dssd_carla.py', help='test config file path')
-    parser.add_argument('--checkpoint', default='/media/hasiegf/data/mmdet3d/out/carla/test/epoch_10.pth', help='checkpoint file')
+    parser.add_argument('--checkpoint', default='/media/hasiegf/data/mmdet3d/out/transformer/queries/1/relu/input/zero/ep80/epoch_80.pth', help='checkpoint file')
     parser.add_argument(
         '--work-dir',
         help='the directory to save the file containing evaluation metrics')
@@ -25,11 +25,12 @@ def parse_args():
         '--show', default=False, action='store_true', help='show prediction results')
     parser.add_argument(
         '--show-dir',
+        default="/media/hasiegf/data/mmdet3d/out/pictures/supervised",
         help='directory where painted images will be saved. '
         'If specified, it will be automatically saved '
         'to the work_dir/timestamp/show_dir')
     parser.add_argument(
-        '--score-thr', type=float, default=0.5, help='bbox score threshold')
+        '--score-thr', type=float, default=0.7, help='bbox score threshold')
     parser.add_argument(
         '--task',
         type=str,

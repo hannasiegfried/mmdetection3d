@@ -9,16 +9,22 @@ def load_cfg(cfg_yaml_path):
     return cfg
 
 def load_weights(model):
-    #weights_path = None
-    #weights_path = f"{path}/logs/2025-04-30_22-25-26_carla_singlestage_single_stage_swinunet_centerfov_tag/state_dict_ep014.pth"
-    weights_path = '/media/hasiegf/data/mmdet3d/out/carla/transformer/queries/1/relu/epoch_80.pth'
+    weights_path = None
+    # normal weights
+    # Decoder approach pretrained
+    #weights_path = "/home/hasiegf/thesis/fw_lidar/logs/2025-07-17_10-11-02_carla_singlestage_dist_single_stage_swinunet_centerfov_tag/state_dict_ep079.pth"
+    # Threshold approach pretrained
+    #weights_path = f"/home/hasiegf/thesis/fw_lidar/logs/2025-07-15_12-22-31_carla_singlestage_dist_single_stage_swinunet_centerfov_tag/state_dict_ep079.pth"
+    #weights_path = '/media/hasiegf/data/mmdet3d/out/carla/transformer/queries/1/relu/epoch_20.pth'
+    #weights_path = '/media/hasiegf/data/mmdet3d/out/carla/transformer/queries/1/relu/input/pred_score/epoch_80.pth'
     if weights_path:
         weights = torch.load(weights_path, weights_only=False)
         weights_stripped = {}
-        weights = weights["state_dict"]
+        #weights = weights["state_dict"]
         for k, v in weights.items():
             k_stripped = ".".join(k.split(".")[1:])
             weights_stripped[k_stripped] = v
+        #weights_stripped
         model.load_state_dict(weights_stripped, strict=False)
     return model
 

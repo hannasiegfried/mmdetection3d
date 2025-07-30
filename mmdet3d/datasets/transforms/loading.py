@@ -612,7 +612,7 @@ class LoadPointsFromWaveformBaseline(BaseTransform):
         waveform /= 255.0
         waveform = torch.as_tensor(waveform)
         output = self.waveform_model.forward(waveform)
-        points = pc_converter.process_pc(output["tof"], output["peak_heights"])
+        points = pc_converter.process_pc(output["tof"]) #, output["peak_heights"])
     
         points_class = get_points_type(self.coord_type)
         points = points_class(
@@ -659,7 +659,8 @@ class LoadPointsFromWaveformModel(BaseTransform):
     def __init__(self, data_path: str) -> None:
         self.coord_type = 'LIDAR'
         self.waveform_path = Path(data_path) / "waveform_8bit"
-        self.waveform_model = peakfinding_model.load_model("/lhome/hasiegf/thesis/fw_lidar")
+        self.waveform_model = peakfinding_model.load_model("/home/hasiegf/thesis/fw_lidar")
+        self.waveform_model.eval()
 
     def transform_output(self, output):
         pred_tof = output["tof"]

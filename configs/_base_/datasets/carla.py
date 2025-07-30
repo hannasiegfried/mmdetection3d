@@ -14,7 +14,7 @@ train_pipeline = [
     #     load_dim=4,  # x, y, z, intensity
     #     use_dim=4),
     dict(
-        type='LoadPointsFromWaveformBaseline',
+        type='LoadPointsForWaveformModelIntegration',
         data_path=data_root),
     dict(
         type='LoadAnnotations3D',
@@ -34,7 +34,7 @@ test_pipeline = [
     #     type='LoadPointsFromWaveformBaseline',
     #     data_path=data_root),
     dict(
-         type='LoadPointsFromWaveformBaseline',
+         type='LoadPointsForWaveformModelIntegration',
          data_path=data_root),
     dict(type='Pack3DDetInputs', keys=['points'])
 ]
@@ -46,27 +46,27 @@ eval_pipeline = [
     #     load_dim=4,  # x, y, z, intensity
     #     use_dim=4),
     dict(
-        type='LoadPointsFromWaveformBaseline',
+        type='LoadPointsForWaveformModelIntegration',
        data_path=data_root),
     dict(type='Pack3DDetInputs', keys=['points']),
 ]
 train_dataloader = dict(
     batch_size=1,
-    num_workers=4,
+    num_workers=2,
     persistent_workers=True,
     sampler=dict(type='DefaultSampler', shuffle=False),
     dataset=dict(
         type='CarlaDataset',
         data_root=data_root,
         data_prefix=dict(pts='points'),
-        ann_file = '/media/hasiegf/data/carla_mmdet/out/no_empty_frames/custom_infos_train.pkl',
+        ann_file = '/media/hasiegf/data/carla_mmdet/out/custom_infos_train.pkl',
         pipeline=train_pipeline,
         metainfo=metainfo,
     )
 )
 test_dataloader = dict(
     batch_size=1,
-    num_workers=4,
+    num_workers=2,
     persistent_workers=True,
     drop_last=False,
     sampler=dict(type='DefaultSampler', shuffle=False),
@@ -74,7 +74,7 @@ test_dataloader = dict(
         type='CarlaDataset',
         data_root=data_root,
         data_prefix=dict(pts='points'),
-        ann_file = '/media/hasiegf/data/carla_mmdet/out/no_empty_frames/custom_infos_test_debug.pkl',
+        ann_file = '/media/hasiegf/data/carla_mmdet/out/custom_infos_test_debug.pkl',
         pipeline=test_pipeline,
         modality=input_modality,
         metainfo=metainfo,
@@ -83,7 +83,7 @@ test_dataloader = dict(
     )
 val_dataloader = dict(
     batch_size=1,
-    num_workers=4,
+    num_workers=2,
     persistent_workers=True,
     drop_last=False,
     sampler=dict(type='DefaultSampler', shuffle=False),
@@ -91,7 +91,7 @@ val_dataloader = dict(
         type='CarlaDataset',
         data_root=data_root,
         data_prefix=dict(pts='points'),
-        ann_file = '/media/hasiegf/data/carla_mmdet/out/no_empty_frames/custom_infos_val.pkl',
+        ann_file = '/media/hasiegf/data/carla_mmdet/out/custom_infos_val.pkl',
         pipeline=eval_pipeline,
         modality=input_modality,
         metainfo=metainfo,
@@ -100,9 +100,9 @@ val_dataloader = dict(
     )
 test_evaluator = dict(
     type='CarlaMetric',
-    ann_file='/media/hasiegf/data/carla_mmdet/out/no_empty_frames/custom_infos_test_debug.pkl',
+    ann_file='/media/hasiegf/data/carla_mmdet/out/custom_infos_test_debug.pkl',
     metric='bbox')
 val_evaluator = dict(
     type='CarlaMetric',
-    ann_file='/media/hasiegf/data/carla_mmdet/out/no_empty_frames/custom_infos_val.pkl',
+    ann_file='/media/hasiegf/data/carla_mmdet/out/custom_infos_val.pkl',
     metric='bbox')

@@ -3,9 +3,15 @@ _base_ = [
     '../_base_/default_runtime.py', '../_base_/schedules/cyclic-40e.py'
 ]
 
-lr = 0.0001  # max learning rate
-optim_wrapper = dict(optimizer=dict(lr=lr, betas=(0.95, 0.85)))
-train_cfg = dict(by_epoch=True, max_epochs=80, val_interval=2)
+lr = 0.001  # max learning rate
+optim_wrapper = dict(
+    optimizer=dict(lr=lr, betas=(0.95, 0.85)), 
+    clip_grad=dict(max_norm=35, norm_type=2),
+    paramwise_cfg=dict(
+        custom_keys={'waveform_model': dict(lr_mult=0.1)})
+)
+
+train_cfg = dict(by_epoch=True, max_epochs=80, val_interval=5)
 
 # Default setting for scaling LR automatically
 #   - `enable` means enable scaling LR automatically
@@ -54,7 +60,12 @@ param_scheduler = [
         convert_to_iter_based=True)
 ]
 
+default_hooks = dict(checkpoint=dict(type='CheckpointHook', interval=1))
+
 vis_backends = [dict(type='LocalVisBackend'), dict(type='TensorboardVisBackend')]
 visualizer = dict(
-    type='Det3DLocalVisualizer', vis_backends=vis_backends, name='visualizer')
-custom_hooks = []
+   type='Det3DLocalVisualizer', vis_backends=vis_backends, name='visualizer')
+#visualizer = dict(
+#    type='PyVistaVisualizer', vis_backends=vis_backends, name='visualizer')
+custom_hooks = [dict(type='ChamferDistanceHook', log_dir=None), 
+                dict(type='BBHook', log_dir=None)]

@@ -356,6 +356,8 @@ class PointRCNNBboxHead(BaseModule):
         # corner_loss = 0.5 * quadratic**2 + delta * linear
         loss = torch.where(abs_error < delta, 0.5 * abs_error**2 / delta,
                            abs_error - 0.5 * delta)
+        if loss > 50:
+            print("HI")
         return loss.mean(dim=1)
 
     def get_targets(self,

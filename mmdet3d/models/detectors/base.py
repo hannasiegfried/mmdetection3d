@@ -32,8 +32,8 @@ class Base3DDetector(BaseDetector):
                  init_cfg: OptMultiConfig = None) -> None:
         super().__init__(
             data_preprocessor=data_preprocessor, init_cfg=init_cfg)
-        self.waveform_model = None
-        #self.waveform_model = peakfinding_model.load_model("/home/hasiegf/thesis/fw_lidar")
+        #self.waveform_model = None
+        self.waveform_model = peakfinding_model.load_model("/home/hasiegf/thesis/fw_lidar")
 
     def forward(self,
                 inputs: Union[dict, List[dict]],
@@ -78,39 +78,43 @@ class Base3DDetector(BaseDetector):
             - If ``mode="loss"``, return a dict of tensor.
         """
         if mode == 'loss':
-            bboxes = data_samples[0].gt_instances_3d.bboxes_3d
-            labels = data_samples[0].gt_instances_3d.labels_3d
-            points = inputs["points"][0]
-            mask = [True] * bboxes.shape[0]
-            for i in range(bboxes.shape[0]):
-                assignments = bboxes[i].points_in_boxes(points[:,:3])
-                if (sum(item != -1 for item in assignments) == 0):
-                    mask[i] = False
-            data_samples[0].gt_instances_3d.bboxes_3d = bboxes[mask]
-            data_samples[0].gt_instances_3d.labels_3d = labels[mask]
-
-            if bboxes[mask].shape[0] == 0:
-                # If no gt boxes, return empty loss
-                return {"no_loss": torch.tensor(0.0, device=points.device)}
-
             if self.waveform_model:
-                self.waveform_model.train()
+                self.waveform_model.eval()
                 inputs["points"][0] = inputs["points"][0].squeeze(1)
                 points = self.forward_waveform_model(inputs)
                 target = data_samples[0].gt_waveform_data
                 target = {key: val.unsqueeze(0).cuda() for key, val in target.items()}
                 points_losses = self.waveform_model.get_loss(points, target)
-                inputs["points"][0] = self.transform_points(points)
-                det_losses = self.loss(inputs, data_samples, **kwargs)
-                det_losses["loss_waveform"] = points_losses["loss"] #1000 for picking, 10 for full_tof, 100 for transformer decoder old
-            else:
-                det_losses = self.loss(inputs, data_samples, **kwargs)
+                inputs["points"][0], _, _ = self.transform_points(points)
+                loss_waveform = points_losses["loss"] #1000 for picking, 10 for full_tof, 100 for transformer decoder old
+
+            # exclude empty bounding boxes
+            # with torch.no_grad():
+            #     bboxes = data_samples[0].gt_instances_3d.bboxes_3d
+            #     labels = data_samples[0].gt_instances_3d.labels_3d
+            #     points = inputs["points"][0]
+            #     mask = [True] * bboxes.shape[0]
+            #     for i in range(bboxes.shape[0]):
+            #         assignments = bboxes[i].points_in_boxes(points[:,:3])
+            #         if (sum(item != -1 for item in assignments) == 0):
+            #             mask[i] = False
+            #     data_samples[0].gt_instances_3d.bboxes_3d = bboxes[mask]
+            #     data_samples[0].gt_instances_3d.labels_3d = labels[mask]
+
+            #     if bboxes[mask].shape[0] == 0:
+            #         #If no gt boxes, return empty loss
+            #         return {"no_loss": torch.tensor(0.0, device=points.device)}
+            det_losses = self.loss(inputs, data_samples, **kwargs)
+
+            if self.waveform_model:
+                det_losses["loss_waveform"] = loss_waveform * 0.1
+            
             return det_losses
         elif mode == 'predict':
             if self.waveform_model:
                 self.waveform_model.eval()
                 output = self.forward_waveform_model(inputs)
-                points = self.transform_points(output)
+                points, tof, pred_score = self.transform_points(output)
                 inputs["points"][0] = points
             if isinstance(data_samples[0], list):
                 # aug test
@@ -123,7 +127,7 @@ class Base3DDetector(BaseDetector):
             else:
                 predictions = self.predict(inputs, data_samples, **kwargs)
                 if self.waveform_model:
-                    predictions[0].pred_points = {"points": points}
+                    predictions[0].pred_points = {"points": points, "tof": tof, "pred_score": pred_score}
                     predictions[0].pred_waveform_data = output
                 else:
                     predictions[0].pred_points = {"points": inputs["points"][0]}
@@ -145,19 +149,25 @@ class Base3DDetector(BaseDetector):
 
         ## For simple thresholding and decoder approach
         pred_score = output["patch_class"][..., 0]
-        quantile = torch.quantile(pred_score, 0.5).item() #0.95 
+        #quantile = torch.quantile(pred_score, 0.95).item() #0.95 
         threshold = 0.5 #max(quantile, 0.2)
-        if (pred_score > threshold).sum().item() < 5000:
-            threshold = quantile
+        #if (pred_score > threshold).sum().item() < 5000:
+        #    threshold = quantile
         pred_tof = torch.where(pred_score < threshold, torch.tensor(0.0, device=pred_tof.device), pred_tof)
+
+        # plt.figure(figsize=(10, 5))
+        # plt.imshow(pred_score.reshape(100,128).cpu(), cmap='viridis', aspect='auto')
+        # plt.colorbar(label='Confidence')
+        # plt.tight_layout()
+        # plt.savefig("scores_unsupervised.png")
 
         ## For mask approach
         # pred_score = output["patch_class"].max(dim=-2)[1]
         # if (pred_score == 33).sum().item() < 5000:
         #     pred_tof = torch.where(pred_score == 33, torch.tensor(0.0, device=pred_tof.device), pred_tof)
         
-        points = pc_converter.process_pc_torch(pred_tof, pred_score)
-        return points.to(torch.float32)
+        points = pc_converter.process_pc_torch(pred_tof)#, features) #, pred_score)
+        return points.to(torch.float32), pred_tof, [pred_score >= threshold]
 
     def add_pred_to_datasample(
         self,

@@ -18,6 +18,8 @@ class BBHook(Hook):
     def __init__(self, log_dir: str):
         self.writer = SummaryWriter(log_dir)
         self.bboxes_metrics = defaultdict(list)
+        self.points_metrics = defaultdict(list)
+        self.bboxes = []
 
     def after_val_iter(self, runner: Runner,
                          batch_idx: int,
@@ -28,7 +30,15 @@ class BBHook(Hook):
 
     def after_val(self, runner: Runner):
         means = {k: np.mean(v) for k, v in self.bboxes_metrics.items()}
-        self.log_scalar_metrics(means, prefix="val")
+        sum_points = {k: np.sum(v) for k, v in self.points_metrics.items()}
+        formatted = {k: round(float(v), 4) for k, v in means.items()}
+        print(f"Points inside bboxes: {formatted}")
+        print(f"Points inside bboxes sum: {sum_points}")
+        with open('output.txt', 'w') as f:
+            for item in self.bboxes:
+                f.write(str(item) + '\n')
+
+        #self.log_scalar_metrics(means, prefix="val")
 
     def after_test_iter(self, runner: Runner,
                          batch_idx: int,
@@ -40,10 +50,13 @@ class BBHook(Hook):
     def after_test(self, runner: Runner):
         """Log custom plots after each training iteration."""
         means = {k: np.mean(v) for k, v in self.bboxes_metrics.items()}
+        sum_points = {k: np.sum(v) for k, v in self.points_metrics.items()}
         formatted = {k: round(float(v), 4) for k, v in means.items()}
         print(f"Points inside bboxes: {formatted}")
+        print(f"Points inside bboxes sum: {sum_points}")
 
-    def bb_metric(self, outputs, bins = [40], rot_axis = 2, center_mode = 'lidar_bottom'):
+    def bb_metric(self, outputs, bins = [20,40,60], rot_axis = 2, center_mode = 'lidar_bottom'):
+        bins_points = [5, 20, 50, 200]
         frame = outputs[0].lidar_path
         targets = self.load_targets_waveform_model(frame)
         gt_pc, pred_pc = self.prepare_for_eval(outputs[0].pred_points, targets)
@@ -73,8 +86,13 @@ class BBHook(Hook):
             indices_pred = box3d.get_point_indices_within_bounding_box(pred_pc)
             
             dist = np.linalg.norm(center)
+
+            self.bboxes.append((dist, len(indices_gt)))
             idx = np.searchsorted(bins, dist)
             bin_name = f"{bins[idx-1] if idx > 0 else 0.0}-{bins[idx] if idx < len(bins) else 'inf'}"
+            idx_points = np.searchsorted(bins_points, len(indices_gt))
+            bin_name_points = f"{bins_points[idx_points-1] if idx_points > 0 else 0.0}-{bins_points[idx_points] if idx_points < len(bins_points) else 'inf'}"
+            self.points_metrics[f"points/gt/{bin_name_points}"].append(1)
             self.bboxes_metrics[f"gt/{bin_name}"].append(len(indices_gt))
             self.bboxes_metrics[f"pred/{bin_name}"].append(len(indices_pred))
 

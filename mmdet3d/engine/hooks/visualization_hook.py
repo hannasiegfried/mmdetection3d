@@ -216,6 +216,8 @@ class Det3DVisualizationHook(Hook):
                     'lidar_path is not in data_sample'
                 lidar_path = data_sample.lidar_path
                 data_input['points'] = data_sample.pred_points["points"]
+                data_input['tof'] = data_sample.pred_points.get("tof", None)
+                data_input['pred_score'] = data_sample.pred_points.get("pred_score", None)
                 if self.test_out_dir is not None:
                     o3d_save_path = osp.basename(lidar_path).split(
                         '.')[0] + '.png'

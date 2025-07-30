@@ -4,7 +4,7 @@ model = dict(
     backbone=dict(
         type='PointNet2SAMSG',
         in_channels=4,
-        num_points=(4096, 1024, 256, 64),
+        num_points=(2048, 512, 126, 32),   #(4096, 1024, 256, 64),
         radii=((0.1, 0.5), (0.5, 1.0), (1.0, 2.0), (2.0, 4.0)),
         num_samples=((16, 32), (16, 32), (16, 32), (16, 32)),
         sa_channels=(((16, 16, 32), (32, 32, 64)), ((64, 64, 128), (64, 96,
@@ -64,7 +64,7 @@ model = dict(
         type='PointRCNNRoIHead',
         bbox_roi_extractor=dict(
             type='Single3DRoIPointExtractor',
-            roi_layer=dict(type='RoIPointPool3d', num_sampled_points=512)),
+            roi_layer=dict(type='RoIPointPool3d', num_sampled_points=256)), #512
         bbox_head=dict(
             type='PointRCNNBboxHead',
             num_classes=1,
@@ -86,11 +86,11 @@ model = dict(
             in_channels=5,
             # 5 = 3 (xyz) + scores + depth
             mlp_channels=[128, 128],
-            num_points=(128, 32, -1),
+            num_points=(64, 32, -1), #128
             radius=(0.2, 0.4, 100),
             num_samples=(16, 16, 16),
             sa_channels=((128, 128, 128), (128, 128, 256), (256, 256, 512)),
-            with_corner_loss=True),
+            with_corner_loss=False),
         depth_normalizer=70.0),
     # model training and testing settings
     train_cfg=dict(

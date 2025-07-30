@@ -14,9 +14,9 @@ def process_pc(dist: np.array, intensity: np.array = None) -> np.array:
     distances are multiplied by the sensor specs."""
     view_dir = np.load("/home/hasiegf/thesis/sensor_specs/view_direction_carla_60deg.npy")
     
-    filtered_dist = filter_points(dist)
+    #filtered_dist = filter_points(dist)
 
-    pc = filtered_dist[..., None] * view_dir[:, :, None, :]
+    pc = dist[..., None] * view_dir[:, :, None, :]
     pc = pc.reshape(-1, 3)
 
     # Add intensity
@@ -26,12 +26,13 @@ def process_pc(dist: np.array, intensity: np.array = None) -> np.array:
         pc = np.hstack((pc, np.zeros((len(pc), 1))))
     
     # Select only rows that do not contain NaN values
-    pc = pc[~np.any(np.isnan(pc), axis=1)]
+    #pc = pc[~np.any(np.isnan(pc), axis=1)]
+    pc = pc[~np.any(pc[:, :3] == 0, axis=1)]
     # Convert distances
     pc[:, [0, 1, 2]] = pc[:, [0, 1, 2]] * TOF_TO_M
 
     # Convert to kitti lidar coordinates
-    pc = pc[:, [2, 0, 1, 3]]
+    pc[:, [0, 1, 2]] = pc[:, [2, 0, 1]]
     pc[:, [1, 2]] = -pc[:, [1, 2]]
    
     return pc
